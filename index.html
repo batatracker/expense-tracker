@@ -97,7 +97,7 @@
     </symbol>
   </svg>
 </head>
-<body x-cloak>
+<body>
 
 <!-- ================================================================
      SCRIPTS — loaded before Alpine so appData() is defined
@@ -111,7 +111,7 @@
 <!-- ================================================================
      APP ROOT
      ================================================================ -->
-<div x-data="appData()" x-init="init()" id="root">
+<div x-data="appData()" x-init="init()" x-cloak id="root">
 
   <!-- Loading screen -->
   <div class="loading-screen" x-show="isInitializing" style="position:fixed;inset:0;z-index:9999">
