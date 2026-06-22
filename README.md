@@ -9,10 +9,11 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
 ## Features
 
 - Track expenses with amount, date, category, merchant, and notes
-- Attach receipt photos (taken with camera or uploaded) — stored in Google Drive
+- Multi-currency support — enter a currency per expense or set a default (e.g. ARS, USD, EUR)
 - Search, filter, and sort your expense history
 - Dashboard with monthly totals, category breakdown chart, and 6-month trend
 - All data lives in a Google Sheet you own — readable and editable without the app
+- Optional: attach receipt photos or PDFs, stored in your Google Drive
 - Works as an installable PWA (add to home screen)
 
 ---
@@ -25,7 +26,7 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
 2. Create a new project (e.g. `expense-tracker`)
 3. Enable these APIs:
    - **Google Sheets API** (search "Sheets API")
-   - **Google Drive API** (search "Drive API")
+   - **Google Drive API** — only needed if you plan to use receipt upload
 
 ### 2. OAuth 2.0 Credentials
 
@@ -37,20 +38,9 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
    - `http://localhost:8080` (for local development)
 5. Copy the **Client ID** (looks like `123456789-abc....apps.googleusercontent.com`)
 
-> **Note:** There is no client secret for this flow — the OAuth Client ID is safe to embed in public source code.
+> **Note:** The OAuth Client ID is not a secret — it only works from origins you explicitly register in Google Cloud Console.
 
-### 3. Configure the app
-
-Edit `config.js` and replace the placeholder:
-
-```js
-const CONFIG = {
-  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID_HERE', // ← paste your Client ID here
-  // ...
-};
-```
-
-### 4. Generate PNG icons (optional, for install prompt)
+### 3. Generate PNG icons (optional, for install prompt)
 
 The app includes an SVG icon (`assets/icon.svg`). To generate PNG icons for the web app manifest, run:
 
@@ -62,7 +52,7 @@ inkscape assets/icon.svg --export-png=assets/icon-512.png --export-width=512
 # Or use any image converter (ImageMagick, online tools, etc.)
 ```
 
-### 5. Deploy to GitHub Pages
+### 4. Deploy to GitHub Pages
 
 1. Push this repository to GitHub
 2. Go to **Settings → Pages**
@@ -70,13 +60,14 @@ inkscape assets/icon.svg --export-png=assets/icon-512.png --export-width=512
 4. Choose `main` branch, `/ (root)` folder
 5. Save — your app will be live at `https://YOUR_USERNAME.github.io/expense-tracker/`
 
-### 6. First run
+### 5. First run
 
 1. Open your GitHub Pages URL
-2. Click **Sign in with Google**
-3. Grant the requested permissions (Sheets + Drive)
-4. The app creates an `ExpenseTracker` spreadsheet in your Google Drive automatically
-5. Start adding expenses!
+2. A one-time **Setup** screen appears — paste your OAuth Client ID and optionally set a default currency (e.g. `ARS`) and enable receipt upload
+3. After saving, your browser URL updates to include your config as a `?cfg=` parameter — **bookmark this URL** so your setup is restored automatically if browser storage is cleared
+4. Click **Sign in with Google** and grant the requested permissions
+5. The app creates an `ExpenseTracker` spreadsheet in your Google Drive automatically
+6. Start adding expenses!
 
 ---
 
@@ -117,15 +108,18 @@ You can add columns to the right without breaking the app. The app reads columns
 
 ## Receipt attachments
 
-Receipts are uploaded to `ExpenseTracker/Receipts/` in your Google Drive (using the `drive.file` scope — the app can only access files it creates). The Google Drive link is stored in the sheet as a clickable URL.
+Receipt upload is **opt-in** — enable it in the Setup screen or Settings. When enabled, the app requests the `drive.file` scope and uploads receipts to `ExpenseTracker/Receipts/` in your Google Drive. The app can only access files it creates itself. The Google Drive link is stored in the sheet as a clickable URL.
 
 Images are compressed client-side (max 1600px, JPEG 82% quality) before upload to keep sizes reasonable on mobile.
+
+If you don't need receipts, leave the option off — the app works fully without Drive access.
 
 ---
 
 ## Privacy & security
 
-- The OAuth Client ID is public — this is normal and safe for browser-side OAuth
+- The OAuth Client ID is not a secret — it only works from origins you register in Google Cloud Console
+- Your Client ID is stored in your browser's `localStorage` and encoded into the bookmarkable `?cfg=` URL — it never touches the app's source code or any server
 - The access token is stored in `sessionStorage` (cleared when you close the tab)
 - The app never sends your data anywhere except Google's own APIs
 - All expense data and receipts live in **your** Google account
