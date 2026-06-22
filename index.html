@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Expenses">
+  <meta name="theme-color" content="#5B4FE9">
+  <meta name="description" content="Track expenses. Data lives in your own Google Sheet.">
+
+  <title>Expense Tracker</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="icon" href="assets/icon-192.png" type="image/png">
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/app.css">
+
+  <!-- Inline SVG icons used throughout -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="icon-dashboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </symbol>
+    <symbol id="icon-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+      <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </symbol>
+    <symbol id="icon-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+    </symbol>
+    <symbol id="icon-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+    </symbol>
+    <symbol id="icon-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+    </symbol>
+    <symbol id="icon-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+    </symbol>
+    <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"/>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    </symbol>
+    <symbol id="icon-google" viewBox="0 0 24 24">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </symbol>
+  </svg>
+</head>
+<body x-cloak>
+
+<!-- ================================================================
+     SCRIPTS — loaded before Alpine so appData() is defined
+     ================================================================ -->
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sheets.js"></script>
+<script src="js/drive.js"></script>
+<script src="js/app.js"></script>
+
+<!-- ================================================================
+     APP ROOT
+     ================================================================ -->
+<div x-data="appData()" x-init="init()" id="root">
+
+  <!-- Loading screen -->
+  <div class="loading-screen" x-show="isInitializing" style="position:fixed;inset:0;z-index:9999">
+    <div class="spinner"></div>
+    <p class="text-sm text-muted">Loading…</p>
+  </div>
+
+  <!-- ============================================================
+       FIRST-RUN SETUP SCREEN
+       Shown when no Google Client ID is configured.
+       The Client ID is stored in localStorage — never in source code.
+       ============================================================ -->
+  <div class="signin-screen" x-show="!isInitializing && isSetupNeeded">
+    <div class="signin-logo">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <rect x="4" y="8" width="28" height="20" rx="3" fill="white" fill-opacity="0.9"/>
+        <rect x="4" y="8" width="28" height="6" rx="3" fill="white"/>
+        <circle cx="11" cy="22" r="3" fill="#5B4FE9" fill-opacity="0.7"/>
+        <rect x="17" y="20" width="11" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.4"/>
+        <rect x="17" y="23" width="7" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.3"/>
+      </svg>
+    </div>
+    <h1 class="signin-title">One-time Setup</h1>
+    <p class="signin-subtitle">Paste your Google OAuth Client ID below. It stays in your browser only — never in the app's source code.</p>
+
+    <div class="signin-card" style="max-width:360px">
+      <!-- Steps -->
+      <ol style="list-style:none;counter-reset:steps;margin-bottom:var(--sp-5)">
+        <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
+          <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">1</span>
+          Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" style="color:var(--clr-primary);font-weight:600">&nbsp;Google Cloud Console&nbsp;</a> → Create credentials → OAuth 2.0 Client ID (Web app)
+        </li>
+        <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
+          <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">2</span>
+          Add this page's URL as an Authorized JavaScript origin
+        </li>
+        <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
+          <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">3</span>
+          Paste the Client ID below
+        </li>
+      </ol>
+
+      <div style="margin-bottom:var(--sp-4)">
+        <label class="form-label" for="setup-client-id">Google OAuth Client ID</label>
+        <input id="setup-client-id" type="text" class="form-input"
+               :class="{error: setupErrors.clientId}"
+               x-model="setupForm.clientId"
+               placeholder="123456789-abc….apps.googleusercontent.com"
+               autocomplete="off" spellcheck="false">
+        <div class="form-error" x-show="setupErrors.clientId" x-text="setupErrors.clientId"></div>
+        <p style="font-size:11px;color:var(--clr-text-3);margin-top:var(--sp-2)">
+          The Client ID is not a secret — it only works from origins you authorise in Google Cloud Console.
+        </p>
+      </div>
+
+      <div style="margin-bottom:var(--sp-5)">
+        <label class="form-label" for="setup-default-currency">Default Currency <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input id="setup-default-currency" type="text" class="form-input"
+               x-model="setupForm.defaultCurrency"
+               placeholder="e.g. ARS, USD, EUR — leave blank to enter per expense"
+               maxlength="3" style="text-transform:uppercase"
+               @input="setupForm.defaultCurrency = setupForm.defaultCurrency.toUpperCase()">
+        <p style="font-size:11px;color:var(--clr-text-3);margin-top:var(--sp-2)">
+          Used as the default for new expenses. You can change this later in Settings.
+        </p>
+      </div>
+
+      <div style="margin-bottom:var(--sp-4)">
+        <details style="font-size:12px;color:var(--clr-text-3)">
+          <summary style="cursor:pointer;font-weight:600;color:var(--clr-text-2);margin-bottom:var(--sp-2)">Already have a Google Sheet? (optional)</summary>
+          <label class="form-label" for="setup-sheet-id" style="margin-top:var(--sp-2)">Sheet ID</label>
+          <input id="setup-sheet-id" type="text" class="form-input"
+                 x-model="setupForm.sheetId"
+                 placeholder="Paste the ID from the Sheet's URL"
+                 style="font-size:13px"
+                 autocomplete="off" spellcheck="false">
+          <p style="margin-top:var(--sp-2)">The long string in <code style="background:var(--clr-surface-2);padding:1px 5px;border-radius:4px">docs.google.com/spreadsheets/d/<strong>THIS_PART</strong>/edit</code></p>
+        </details>
+      </div>
+
+      <button class="btn btn-primary btn-full" @click="saveSetup()">
+        Save &amp; Continue
+      </button>
+      <p style="margin-top:var(--sp-3);font-size:12px;color:var(--clr-text-3);text-align:center;line-height:1.5">
+        After saving, your browser URL will update to include your config.<br>
+        <strong>Bookmark that URL</strong> — it restores your setup automatically if browser storage is cleared.
+      </p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SIGN-IN SCREEN
+       ============================================================ -->
+  <div class="signin-screen" x-show="!isInitializing && !isSetupNeeded && !isAuthenticated">
+    <div class="signin-logo">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <rect x="4" y="8" width="28" height="20" rx="3" fill="white" fill-opacity="0.9"/>
+        <rect x="4" y="8" width="28" height="6" rx="3" fill="white"/>
+        <circle cx="11" cy="22" r="3" fill="#5B4FE9" fill-opacity="0.7"/>
+        <rect x="17" y="20" width="11" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.4"/>
+        <rect x="17" y="23" width="7" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.3"/>
+      </svg>
+    </div>
+    <h1 class="signin-title">Expense Tracker</h1>
+    <p class="signin-subtitle">Your expenses. Your data. Stored in your own Google Sheet.</p>
+
+    <div class="signin-card">
+      <button class="btn-google" @click="signIn()">
+        <svg width="18" height="18"><use href="#icon-google"/></svg>
+        Sign in with Google
+      </button>
+      <div class="divider">What you get</div>
+      <ul class="signin-features">
+        <li>
+          <svg width="14" height="14"><use href="#icon-check"/></svg>
+          Full expense history in a Google Sheet you own
+        </li>
+        <li>
+          <svg width="14" height="14"><use href="#icon-check"/></svg>
+          Receipt photos stored in your Google Drive
+        </li>
+        <li>
+          <svg width="14" height="14"><use href="#icon-check"/></svg>
+          No subscription. No server. Free forever.
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MAIN APP
+       ============================================================ -->
+  <div class="app-shell" x-show="!isInitializing && !isSetupNeeded && isAuthenticated">
+
+    <!-- Toast -->
+    <div class="toast-wrap" x-show="toastVisible"
+         x-transition:enter="slide-up-enter-active"
+         x-transition:enter-start="slide-up-enter-from"
+         x-transition:leave="slide-up-leave-active"
+         x-transition:leave-end="slide-up-leave-to">
+      <div class="toast" :class="toastType">
+        <svg width="16" height="16" x-show="toastType==='success'"><use href="#icon-check"/></svg>
+        <span x-text="toastMessage"></span>
+      </div>
+    </div>
+
+    <!-- Hidden file inputs for receipts -->
+    <input type="file" id="camera-input"    accept="image/*" capture="environment" style="display:none" @change="handleFileSelect($event)">
+    <input type="file" id="file-input"      accept="image/*,.pdf" style="display:none"                  @change="handleFileSelect($event)">
+    <input type="file" id="retro-input"     accept="image/*,.pdf" style="display:none"                  @change="handleRetroactiveReceipt($event)">
+
+    <!-- ===========================================================
+         VIEW CONTAINER
+         =========================================================== -->
+    <div class="view-container">
+
+      <!-- -------- DASHBOARD -------- -->
+      <div x-show="currentView === 'dashboard'">
+        <div class="view-header">
+          <h1>Dashboard</h1>
+          <button class="back-btn" @click="refreshExpenses()" title="Refresh" aria-label="Refresh expenses">
+            <svg width="18" height="18"><use href="#icon-refresh"/></svg>
+          </button>
+        </div>
+
+        <div class="dashboard-scroll">
+          <!-- Period tabs -->
+          <div class="period-tabs" role="tablist">
+            <template x-for="p in [
+              {id:'this-month',label:'This Month'},
+              {id:'last-month',label:'Last Month'},
+              {id:'last-3-months',label:'3 Months'},
+              {id:'this-year',label:'This Year'},
+              {id:'all-time',label:'All Time'}
+            ]" :key="p.id">
+              <button class="period-tab" :class="{active: dashPeriod === p.id}"
+                      @click="dashPeriod = p.id" role="tab" :aria-selected="dashPeriod === p.id"
+                      x-text="p.label"></button>
+            </template>
+          </div>
+
+          <!-- Summary card — handles single or multiple currencies -->
+          <div class="summary-card">
+            <div class="summary-label">Total Spent</div>
+            <!-- No expenses in period -->
+            <template x-if="dashboardSummary.currencyTotals.length === 0">
+              <div class="summary-amount" x-text="defaultCurrency ? formatCurrency(0, defaultCurrency) : '0.00'"></div>
+            </template>
+            <!-- Single currency (the common case) -->
+            <template x-if="dashboardSummary.currencyTotals.length === 1">
+              <div class="summary-amount"
+                   x-text="formatCurrency(dashboardSummary.currencyTotals[0].total, dashboardSummary.currencyTotals[0].currency)">
+              </div>
+            </template>
+            <!-- Multiple currencies — stack them -->
+            <template x-if="dashboardSummary.currencyTotals.length > 1">
+              <div>
+                <template x-for="entry in dashboardSummary.currencyTotals" :key="entry.currency">
+                  <div class="summary-amount" style="font-size:22px;line-height:1.3"
+                       x-text="formatCurrency(entry.total, entry.currency)"></div>
+                </template>
+                <div style="font-size:11px;opacity:0.6;margin-top:4px">across
+                  <span x-text="dashboardSummary.currencyTotals.length"></span> currencies
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Loading state -->
+          <template x-if="isLoading">
+            <div>
+              <div class="skeleton-row card mb-4"><div class="skeleton skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line" style="width:40%"></div></div></div>
+            </div>
+          </template>
+
+          <!-- Charts (only when data available) -->
+          <template x-if="!isLoading">
+            <div>
+              <!-- Category breakdown -->
+              <div class="chart-card">
+                <div class="chart-title">Spending by Category</div>
+                <div class="chart-wrap">
+                  <canvas id="category-chart"></canvas>
+                </div>
+              </div>
+
+              <!-- Monthly trend -->
+              <div class="chart-card">
+                <div class="chart-title">6-Month Trend</div>
+                <div class="chart-wrap">
+                  <canvas id="trend-chart"></canvas>
+                </div>
+              </div>
+
+              <!-- Recent expenses -->
+              <div class="chart-card">
+                <div class="flex items-center justify-between" style="margin-bottom:var(--sp-4)">
+                  <div class="chart-title" style="margin-bottom:0">Recent Expenses</div>
+                </div>
+                <template x-if="dashboardSummary.recent.length === 0">
+                  <p class="text-sm text-muted" style="text-align:center;padding:var(--sp-4) 0">No expenses yet</p>
+                </template>
+                <div class="recent-list">
+                  <template x-for="e in dashboardSummary.recent" :key="e.id">
+                    <div class="recent-item" @click="navigate('expenses'); openDetail(e)" style="cursor:pointer">
+                      <div class="recent-icon" :style="`background-color: ${getCategoryColor(e.category)}20`">
+                        <span x-text="getCategoryIcon(e.category)"></span>
+                      </div>
+                      <div class="recent-label">
+                        <div class="recent-merchant truncate" x-text="e.merchant || e.category"></div>
+                        <div class="recent-date" x-text="formatDateShort(e.date)"></div>
+                      </div>
+                      <div class="recent-amount" x-text="formatCurrency(e.amount, e.currency)"></div>
+                    </div>
+                  </template>
+                </div>
+                <div class="view-all-link" @click="navigate('expenses')" style="cursor:pointer">
+                  View all expenses
+                  <svg width="14" height="14"><use href="#icon-chevron-right"/></svg>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div><!-- /dashboard -->
+
+      <!-- -------- EXPENSES LIST -------- -->
+      <div x-show="currentView === 'expenses'">
+        <div class="view-header">
+          <h1>Expenses</h1>
+          <button class="back-btn" @click="refreshExpenses()" aria-label="Refresh">
+            <svg width="18" height="18"><use href="#icon-refresh"/></svg>
+          </button>
+        </div>
+
+        <!-- Search & filter bar -->
+        <div class="search-bar">
+          <div class="search-input-wrap">
+            <svg width="16" height="16"><use href="#icon-search"/></svg>
+            <input type="search" class="search-input" placeholder="Search expenses…"
+                   x-model="search" @input="search = $event.target.value" aria-label="Search expenses">
+          </div>
+          <button class="filter-btn" :class="{active: showFilters || hasActiveFilters}"
+                  @click="showFilters = !showFilters" aria-label="Toggle filters">
+            <svg width="16" height="16"><use href="#icon-filter"/></svg>
+            <span class="filter-badge" x-show="activeFilterCount > 0" x-text="activeFilterCount"></span>
+          </button>
+        </div>
+
+        <!-- Filter panel -->
+        <div class="filter-panel" x-show="showFilters" x-collapse>
+          <div class="filter-section-title">Category</div>
+          <div class="category-chip-grid">
+            <template x-for="cat in categories" :key="cat">
+              <button class="category-chip"
+                      :class="{selected: filterCategories.includes(cat)}"
+                      @click="toggleCategoryFilter(cat)"
+                      x-text="cat"></button>
+            </template>
+          </div>
+          <div class="date-range-row mt-4">
+            <label>
+              <span>From</span>
+              <input type="date" x-model="filterStart">
+            </label>
+            <label>
+              <span>To</span>
+              <input type="date" x-model="filterEnd">
+            </label>
+          </div>
+          <div style="margin-top:var(--sp-3);display:flex;justify-content:flex-end">
+            <button class="btn btn-sm btn-ghost" @click="clearFilters()">Clear filters</button>
+          </div>
+        </div>
+
+        <!-- Sort bar -->
+        <div class="sort-bar">
+          <span class="text-xs text-muted" x-text="`${filteredExpenses.length} expense${filteredExpenses.length !== 1 ? 's' : ''}`"></span>
+          <select class="sort-select" x-model="sortBy" aria-label="Sort order">
+            <option value="date-desc">Newest first</option>
+            <option value="date-asc">Oldest first</option>
+            <option value="amount-desc">Highest amount</option>
+            <option value="amount-asc">Lowest amount</option>
+          </select>
+        </div>
+
+        <!-- Loading skeletons -->
+        <template x-if="isLoading">
+          <div class="expense-list">
+            <template x-for="i in [1,2,3,4,5]" :key="i">
+              <div class="skeleton-row card mb-4" style="border-radius:var(--r-lg)">
+                <div class="skeleton skeleton-avatar" style="width:44px;height:44px;border-radius:var(--r-md)"></div>
+                <div class="skeleton-lines" style="flex:1">
+                  <div class="skeleton skeleton-line" style="width:55%;height:15px"></div>
+                  <div class="skeleton skeleton-line" style="width:35%;height:12px"></div>
+                </div>
+                <div class="skeleton skeleton-line" style="width:60px;height:18px"></div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Empty / no results -->
+        <template x-if="!isLoading && filteredExpenses.length === 0 && !search && !hasActiveFilters">
+          <div class="empty-state">
+            <div class="empty-icon">💸</div>
+            <h3>No expenses yet</h3>
+            <p>Tap the + button to add your first expense.</p>
+          </div>
+        </template>
+        <template x-if="!isLoading && filteredExpenses.length === 0 && (search || hasActiveFilters)">
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>No results</h3>
+            <p>No expenses match your search or filters.</p>
+            <button class="btn btn-secondary btn-sm" @click="clearFilters(); search=''">Clear search &amp; filters</button>
+          </div>
+        </template>
+
+        <!-- Expense list -->
+        <div class="expense-list" x-show="!isLoading && filteredExpenses.length > 0">
+          <template x-for="expense in filteredExpenses" :key="expense.id">
+            <div class="expense-card" @click="openDetail(expense)" role="button" tabindex="0"
+                 @keydown.enter="openDetail(expense)" @keydown.space.prevent="openDetail(expense)">
+              <div class="category-icon"
+                   :style="`background-color: ${getCategoryColor(expense.category)}18`">
+                <span x-text="getCategoryIcon(expense.category)"></span>
+              </div>
+              <div class="expense-meta">
+                <div class="expense-merchant truncate" x-text="expense.merchant || expense.category"></div>
+                <div class="expense-detail-line">
+                  <span x-text="formatDateShort(expense.date)"></span>
+                  <span style="width:3px;height:3px;border-radius:50%;background:var(--clr-text-3);display:inline-block"></span>
+                  <span class="category-badge"
+                        :style="`background-color:${getCategoryColor(expense.category)}18;color:${getCategoryColor(expense.category)}`"
+                        x-text="expense.category"></span>
+                </div>
+              </div>
+              <div class="expense-amount" x-text="formatCurrency(expense.amount, expense.currency)"></div>
+            </div>
+          </template>
+        </div>
+      </div><!-- /expenses -->
+
+      <!-- -------- ADD / EDIT FORM -------- -->
+      <div x-show="currentView === 'add'">
+        <div class="view-header">
+          <button class="back-btn" @click="cancelForm()" aria-label="Go back">
+            <svg width="20" height="20"><use href="#icon-back"/></svg>
+          </button>
+          <h1 x-text="isEditing ? 'Edit Expense' : 'Add Expense'"></h1>
+          <button class="btn btn-primary btn-sm" @click="saveExpense()" :disabled="isSaving">
+            <span x-show="!isSaving">Save</span>
+            <span x-show="isSaving">Saving…</span>
+          </button>
+        </div>
+
+        <div class="form-page">
+          <!-- Amount + Currency row -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="amount">Amount <span class="text-danger">*</span></label>
+              <div class="amount-input-wrap">
+                <span class="amount-currency-prefix" x-text="form.currency || defaultCurrency"></span>
+                <input id="amount" type="number" class="form-input" :class="{error: formErrors.amount}"
+                       x-model="form.amount" @input="formDirty=true" @change="formDirty=true"
+                       placeholder="0.00" step="0.01" min="0" inputmode="decimal"
+                       aria-required="true" :aria-invalid="!!formErrors.amount">
+              </div>
+              <div class="form-error" x-show="formErrors.amount" x-text="formErrors.amount"></div>
+            </div>
+            <div class="form-group" style="width:80px">
+              <label class="form-label" for="currency">Currency</label>
+              <input id="currency" type="text" class="form-input" x-model="form.currency"
+                     @input="formDirty=true" maxlength="3"
+                     style="text-transform:uppercase;text-align:center" placeholder="USD">
+            </div>
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label class="form-label" for="date">Date</label>
+            <input id="date" type="date" class="form-input" x-model="form.date" @change="formDirty=true">
+          </div>
+
+          <!-- Category -->
+          <div class="form-group">
+            <label class="form-label" for="category">Category <span class="text-danger">*</span></label>
+            <div class="select-wrap">
+              <select id="category" class="form-select" :class="{error: formErrors.category}"
+                      x-model="form.category" @change="formDirty=true"
+                      aria-required="true" :aria-invalid="!!formErrors.category">
+                <option value="" disabled>Select a category…</option>
+                <template x-for="cat in categories" :key="cat">
+                  <option :value="cat" x-text="cat"></option>
+                </template>
+              </select>
+              <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+            </div>
+            <div class="form-error" x-show="formErrors.category" x-text="formErrors.category"></div>
+          </div>
+
+          <!-- Custom category (when "Other" is selected) -->
+          <div class="form-group" x-show="form.category === 'Other'">
+            <label class="form-label" for="customCategory">Custom Category</label>
+            <input id="customCategory" type="text" class="form-input"
+                   :class="{error: formErrors.customCategory}"
+                   x-model="form.customCategory" @input="formDirty=true"
+                   placeholder="e.g. Gym, Coffee, Hobbies">
+            <div class="form-error" x-show="formErrors.customCategory" x-text="formErrors.customCategory"></div>
+          </div>
+
+          <!-- Merchant -->
+          <div class="form-group">
+            <label class="form-label" for="merchant">Merchant / Store</label>
+            <input id="merchant" type="text" class="form-input" x-model="form.merchant"
+                   @input="formDirty=true" placeholder="e.g. Amazon, Starbucks">
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label class="form-label" for="notes">Notes</label>
+            <textarea id="notes" class="form-textarea" x-model="form.notes"
+                      @input="formDirty=true" placeholder="Any extra details…" rows="3"></textarea>
+          </div>
+
+          <!-- Receipt -->
+          <div class="form-group">
+            <div class="form-label">Receipt</div>
+            <div class="receipt-section">
+              <!-- Preview (existing or newly selected) -->
+              <template x-if="receiptPreviewUrl || receiptFileName || existingReceiptUrl">
+                <div class="receipt-preview">
+                  <template x-if="receiptPreviewUrl">
+                    <img class="receipt-thumb" :src="receiptPreviewUrl" alt="Receipt preview">
+                  </template>
+                  <template x-if="!receiptPreviewUrl && (receiptFileName || existingReceiptUrl)">
+                    <div class="receipt-file-badge">
+                      <svg width="16" height="16"><use href="#icon-receipt"/></svg>
+                      <span class="truncate" style="max-width:180px"
+                            x-text="receiptFileName || 'Attached receipt'"></span>
+                    </div>
+                  </template>
+                  <button class="remove-receipt-btn" @click="removeReceipt()" aria-label="Remove receipt">×</button>
+                </div>
+              </template>
+
+              <!-- Buttons -->
+              <template x-if="!receiptFile && !existingReceiptUrl">
+                <div class="receipt-actions">
+                  <button type="button" class="btn-receipt"
+                          @click="document.getElementById('camera-input').click()">
+                    <svg width="16" height="16"><use href="#icon-camera"/></svg>
+                    Take Photo
+                  </button>
+                  <button type="button" class="btn-receipt"
+                          @click="document.getElementById('file-input').click()">
+                    <svg width="16" height="16"><use href="#icon-upload"/></svg>
+                    Upload File
+                  </button>
+                </div>
+              </template>
+              <template x-if="receiptFile || existingReceiptUrl">
+                <div style="margin-top:var(--sp-2)">
+                  <button type="button" class="btn btn-sm btn-ghost"
+                          @click="document.getElementById('file-input').click()" style="font-size:12px">
+                    Replace file
+                  </button>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Save / Cancel -->
+          <div class="btn-row" style="padding:0;margin-top:var(--sp-4)">
+            <button class="btn btn-secondary" @click="cancelForm()">Cancel</button>
+            <button class="btn btn-primary flex-1" @click="saveExpense()" :disabled="isSaving">
+              <span x-show="!isSaving" x-text="isEditing ? 'Update' : 'Save Expense'"></span>
+              <span x-show="isSaving">Saving…</span>
+            </button>
+          </div>
+        </div>
+      </div><!-- /add -->
+
+      <!-- -------- SETTINGS -------- -->
+      <div x-show="currentView === 'settings'">
+        <div class="view-header">
+          <h1>Settings</h1>
+        </div>
+
+        <div class="settings-page">
+          <!-- User header -->
+          <template x-if="user">
+            <div class="user-header">
+              <template x-if="user.picture">
+                <img class="user-avatar" :src="user.picture" :alt="user.name" referrerpolicy="no-referrer">
+              </template>
+              <template x-if="!user.picture">
+                <div class="user-avatar-placeholder" x-text="(user.name||'?')[0].toUpperCase()"></div>
+              </template>
+              <div>
+                <div class="user-name" x-text="user.name"></div>
+                <div class="user-email" x-text="user.email"></div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Preferences -->
+          <div class="settings-section">
+            <div class="settings-section-title">Preferences</div>
+            <div class="settings-card">
+              <div class="settings-row" style="cursor:default">
+                <div class="settings-row-icon" style="background:var(--clr-primary-light);color:var(--clr-primary)">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                </div>
+                <div class="settings-row-text">
+                  <div class="settings-row-title">Default Currency</div>
+                  <div class="settings-row-desc">Pre-fills currency on new expenses (optional)</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:var(--sp-2)">
+                  <input type="text" class="form-input" x-model="defaultCurrency"
+                         style="width:80px;text-align:center;text-transform:uppercase;padding:6px 8px;font-size:14px;font-weight:600"
+                         maxlength="3" placeholder="ARS" @change="saveSettings()" aria-label="Default currency code">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data -->
+          <div class="settings-section">
+            <div class="settings-section-title">Data</div>
+            <div class="settings-card">
+              <div class="settings-row" @click="openSheet()" role="button" tabindex="0" @keydown.enter="openSheet()">
+                <div class="settings-row-icon" style="background:#ECFDF5;color:#059669">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                </div>
+                <div class="settings-row-text">
+                  <div class="settings-row-title">Open Google Sheet</div>
+                  <div class="settings-row-desc" x-text="sheetId ? 'View your expense spreadsheet' : 'Sheet not linked yet'"></div>
+                </div>
+                <div class="settings-row-action"><svg width="16" height="16"><use href="#icon-chevron-right"/></svg></div>
+              </div>
+              <div class="settings-row" @click="relinkSheet()" role="button" tabindex="0" @keydown.enter="relinkSheet()">
+                <div class="settings-row-icon" style="background:#EFF6FF;color:#2563EB">
+                  <svg width="18" height="18"><use href="#icon-refresh"/></svg>
+                </div>
+                <div class="settings-row-text">
+                  <div class="settings-row-title">Re-link Sheet</div>
+                  <div class="settings-row-desc">Find or recreate the ExpenseTracker sheet</div>
+                </div>
+                <div class="settings-row-action"><svg width="16" height="16"><use href="#icon-chevron-right"/></svg></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Account -->
+          <div class="settings-section">
+            <div class="settings-section-title">Account</div>
+            <div class="settings-card">
+              <!-- Google Client ID (masked) -->
+              <div class="settings-row" @click="clearClientId()" role="button" tabindex="0" @keydown.enter="clearClientId()">
+                <div class="settings-row-icon" style="background:#F5F3FF;color:#6D28D9">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div class="settings-row-text">
+                  <div class="settings-row-title">Google Client ID</div>
+                  <div class="settings-row-desc" x-text="maskedClientId || '(not set)'"></div>
+                </div>
+                <div class="settings-row-action" style="font-size:11px;color:var(--clr-danger)">Remove</div>
+              </div>
+              <div class="settings-row" @click="signOut()" role="button" tabindex="0" @keydown.enter="signOut()">
+                <div class="settings-row-icon" style="background:var(--clr-danger-bg);color:var(--clr-danger)">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </div>
+                <div class="settings-row-text">
+                  <div class="settings-row-title" style="color:var(--clr-danger)">Sign Out</div>
+                  <div class="settings-row-desc">Clear session and return to sign-in</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- About -->
+          <div class="settings-section">
+            <div class="settings-section-title">About</div>
+            <div class="settings-card">
+              <div class="settings-row" style="cursor:default">
+                <div class="settings-row-icon" style="background:var(--clr-primary-light);color:var(--clr-primary)">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <div class="settings-row-text">
+                  <div class="settings-row-title">Expense Tracker</div>
+                  <div class="settings-row-desc" x-text="`Version ${appVersion}`"></div>
+                </div>
+              </div>
+              <div class="settings-row" @click="window.open(repoUrl,'_blank')" role="button" tabindex="0">
+                <div class="settings-row-icon" style="background:var(--clr-surface-2);color:var(--clr-text-2)">
+                  <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                </div>
+                <div class="settings-row-text">
+                  <div class="settings-row-title">View on GitHub</div>
+                </div>
+                <div class="settings-row-action"><svg width="16" height="16"><use href="#icon-link"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /settings -->
+
+    </div><!-- /view-container -->
+
+    <!-- ============================================================
+         BOTTOM NAVIGATION
+         ============================================================ -->
+    <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+      <button class="nav-tab" :class="{active: currentView === 'dashboard'}"
+              @click="navigate('dashboard')" aria-label="Dashboard" role="tab" :aria-selected="currentView === 'dashboard'">
+        <svg width="22" height="22"><use href="#icon-dashboard"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-tab" :class="{active: currentView === 'expenses'}"
+              @click="navigate('expenses')" aria-label="Expenses" role="tab" :aria-selected="currentView === 'expenses'">
+        <svg width="22" height="22"><use href="#icon-list"/></svg>
+        <span>Expenses</span>
+      </button>
+      <div class="nav-add-tab">
+        <button class="nav-add-btn" @click="navigate('add')" aria-label="Add expense">
+          <svg width="22" height="22"><use href="#icon-plus"/></svg>
+        </button>
+      </div>
+      <button class="nav-tab" :class="{active: currentView === 'settings'}"
+              @click="navigate('settings')" aria-label="Settings" role="tab" :aria-selected="currentView === 'settings'">
+        <svg width="22" height="22"><use href="#icon-settings"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- ============================================================
+         EXPENSE DETAIL BOTTOM SHEET
+         ============================================================ -->
+    <div class="overlay" x-show="showDetail && !showDeleteConfirm"
+         @click="closeDetail()"
+         x-transition:enter="fade-enter-active"
+         x-transition:enter-start="fade-enter-from"
+         x-transition:leave="fade-enter-active"
+         x-transition:leave-end="fade-enter-from"
+         style="z-index:800"></div>
+
+    <div class="bottom-sheet" x-show="showDetail && !showDeleteConfirm" style="z-index:900"
+         x-transition:enter="slide-up-enter-active"
+         x-transition:enter-start="slide-up-enter-from"
+         x-transition:leave="slide-up-leave-active"
+         x-transition:leave-end="slide-up-leave-to"
+         role="dialog" aria-modal="true" aria-label="Expense details">
+
+      <div class="sheet-handle"></div>
+
+      <template x-if="selectedExpense">
+        <div>
+          <div class="sheet-header">
+            <div>
+              <div class="text-xs text-muted" style="margin-bottom:2px" x-text="selectedExpense.category"></div>
+              <div class="detail-amount" x-text="formatCurrency(selectedExpense.amount, selectedExpense.currency)"></div>
+            </div>
+            <button class="sheet-close" @click="closeDetail()" aria-label="Close detail">
+              <svg width="16" height="16"><use href="#icon-close"/></svg>
+            </button>
+          </div>
+
+          <div class="sheet-body">
+            <div class="detail-row">
+              <div class="detail-icon">📅</div>
+              <div>
+                <div class="detail-label">Date</div>
+                <div class="detail-value" x-text="formatDate(selectedExpense.date)"></div>
+              </div>
+            </div>
+            <div class="detail-row" x-show="selectedExpense.merchant">
+              <div class="detail-icon">🏪</div>
+              <div>
+                <div class="detail-label">Merchant</div>
+                <div class="detail-value" x-text="selectedExpense.merchant"></div>
+              </div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-icon" x-text="getCategoryIcon(selectedExpense.category)"></div>
+              <div>
+                <div class="detail-label">Category</div>
+                <div class="detail-value" x-text="selectedExpense.category"></div>
+              </div>
+            </div>
+            <div class="detail-row" x-show="selectedExpense.notes">
+              <div class="detail-icon">📝</div>
+              <div>
+                <div class="detail-label">Notes</div>
+                <div class="detail-value" x-text="selectedExpense.notes" style="white-space:pre-wrap"></div>
+              </div>
+            </div>
+            <!-- Receipt -->
+            <div class="detail-row">
+              <div class="detail-icon">🧾</div>
+              <div class="flex-1">
+                <div class="detail-label">Receipt</div>
+                <template x-if="selectedExpense.receiptUrl">
+                  <a :href="selectedExpense.receiptUrl" target="_blank" rel="noopener"
+                     class="btn btn-sm btn-secondary" style="margin-top:var(--sp-2);display:inline-flex">
+                    <svg width="14" height="14"><use href="#icon-link"/></svg>
+                    View Receipt
+                  </a>
+                </template>
+                <template x-if="!selectedExpense.receiptUrl">
+                  <div style="display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-2)">
+                    <span class="text-sm text-muted">No receipt attached</span>
+                    <button class="btn btn-sm btn-ghost" style="padding:4px 10px;font-size:12px"
+                            @click="document.getElementById('retro-input').click()">
+                      + Add Receipt
+                    </button>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-row" style="border-top:1px solid var(--clr-border)">
+            <button class="btn btn-danger flex-1" @click="showDeleteConfirm = true">
+              <svg width="16" height="16"><use href="#icon-trash"/></svg>
+              Delete
+            </button>
+            <button class="btn btn-secondary flex-1" @click="openEditExpense(selectedExpense)">
+              <svg width="16" height="16"><use href="#icon-edit"/></svg>
+              Edit
+            </button>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- ============================================================
+         DELETE CONFIRMATION DIALOG
+         ============================================================ -->
+    <div class="dialog-overlay" x-show="showDeleteConfirm"
+         x-transition:enter="fade-enter-active"
+         x-transition:enter-start="fade-enter-from"
+         x-transition:leave="fade-enter-active"
+         x-transition:leave-end="fade-enter-from"
+         style="z-index:960">
+      <div class="dialog">
+        <div class="dialog-icon" style="background:var(--clr-danger-bg)">🗑️</div>
+        <h3>Delete Expense?</h3>
+        <p>This will permanently remove the expense from your Google Sheet. This action cannot be undone.</p>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary flex-1"
+                  @click="showDeleteConfirm = false" :disabled="isDeleting">Cancel</button>
+          <button class="btn btn-danger flex-1"
+                  @click="confirmDelete()" :disabled="isDeleting">
+            <span x-show="!isDeleting">Delete</span>
+            <span x-show="isDeleting">Deleting…</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app-shell -->
+</div><!-- /root -->
+
+<!-- CDN libraries (after body content so scripts above run first) -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Alpine.js — must be last, defer so our scripts register first -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+</body>
+</html>

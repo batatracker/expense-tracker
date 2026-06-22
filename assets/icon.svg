@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="108" fill="#5B4FE9"/>
+  <!-- Card body -->
+  <rect x="96" y="155" width="320" height="224" rx="28" fill="white" fill-opacity="0.95"/>
+  <!-- Card header stripe -->
+  <rect x="96" y="155" width="320" height="70" rx="28" fill="white"/>
+  <rect x="96" y="191" width="320" height="34" fill="white"/>
+  <!-- Coin/amount circle -->
+  <circle cx="168" cy="305" r="38" fill="#5B4FE9" fill-opacity="0.72"/>
+  <!-- Line items -->
+  <rect x="224" y="289" width="132" height="16" rx="8" fill="#5B4FE9" fill-opacity="0.32"/>
+  <rect x="224" y="317" width="88" height="12" rx="6" fill="#5B4FE9" fill-opacity="0.20"/>
+  <!-- Dollar sign in circle -->
+  <text x="168" y="313" text-anchor="middle" dominant-baseline="middle"
+        font-family="system-ui, sans-serif" font-size="38" font-weight="700" fill="white">$</text>
+</svg>
