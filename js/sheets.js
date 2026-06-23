@@ -394,6 +394,7 @@ const Sheets = (function () {
     return [
       d.id              || '',
       d.source          || '',
+      d.date            || '',
       Number(d.totalAmount) || 0,
       Number(d.outstandingBalance) || 0,
       d.currency        || '',
@@ -409,6 +410,7 @@ const Sheets = (function () {
     return {
       id:                 (row[col('id')]                   || '').toString().trim(),
       source:             (row[col('source')]               || '').toString().trim(),
+      date:               _toIso((row[col('date')]          || '').toString().trim()),
       totalAmount:        (row[col('total amount')]         || '0').toString().trim(),
       outstandingBalance: (row[col('outstanding balance')]  || '0').toString().trim(),
       currency:           (row[col('currency')]             || '').toString().trim(),

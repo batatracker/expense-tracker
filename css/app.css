@@ -942,6 +942,40 @@ a { color: inherit; text-decoration: none; }
 .mt-2 { margin-top: var(--sp-2); }
 .mb-4 { margin-bottom: var(--sp-4); }
 .p-4  { padding: var(--sp-4); }
+/* ---- Dashboard analysis section toggle ---- */
+.dash-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--sp-1) 0 var(--sp-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.dash-section-toggle:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+.dash-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--clr-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.dash-section-chevron {
+  color: var(--clr-text-3);
+  flex-shrink: 0;
+  transition: transform var(--dur-std) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dash-section-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
 .view-all-link {
   display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
   padding: var(--sp-3);
@@ -1143,9 +1177,77 @@ a { color: inherit; text-decoration: none; }
    Debt Tracking — Styles
    ============================================================ */
 
-/* ---- Dashboard widget ---- */
-.debt-dashboard-widget {
-  border-left: 3px solid var(--clr-primary);
+/* ---- Dashboard debt strip ---- */
+.debt-dash-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: var(--clr-surface);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+  box-shadow: 0 2px 8px rgba(217,119,6,0.10), 0 1px 2px rgba(0,0,0,0.04);
+  border-left: 3px solid #D97706;
+  cursor: pointer;
+  transition: background var(--dur-fast), transform var(--dur-fast) cubic-bezier(0.16,1,0.3,1), box-shadow var(--dur-fast);
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.debt-dash-strip:hover {
+  box-shadow: 0 4px 12px rgba(217,119,6,0.15), 0 1px 3px rgba(0,0,0,0.05);
+}
+.debt-dash-strip:active {
+  background: var(--clr-surface-2);
+  transform: scale(0.985);
+  box-shadow: 0 1px 4px rgba(217,119,6,0.08);
+}
+.debt-dash-strip:focus-visible {
+  outline: 2px solid #D97706;
+  outline-offset: 2px;
+}
+.debt-dash-strip-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #FEF3C7, #FFFBEB);
+  color: #D97706;
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(217,119,6,0.12);
+}
+.debt-dash-strip-body { flex: 1; min-width: 0; }
+.debt-dash-strip-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--clr-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1px;
+}
+.debt-dash-strip-amounts {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--clr-text);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.debt-dash-strip-meta {
+  font-size: 11px;
+  color: var(--clr-text-3);
+  margin-top: 1px;
+}
+.debt-dash-sep { margin: 0 4px; color: var(--clr-text-3); font-weight: 400; }
+.debt-dash-strip-arrow {
+  color: var(--clr-text-3);
+  flex-shrink: 0;
+  transition: transform var(--dur-fast) cubic-bezier(0.16,1,0.3,1);
+}
+.debt-dash-strip:hover .debt-dash-strip-arrow,
+.debt-dash-strip:active .debt-dash-strip-arrow {
+  transform: translateX(3px);
+  color: #D97706;
 }
 .debt-summary-widget {
   background: var(--clr-primary-light);
@@ -1361,3 +1463,7 @@ a { color: inherit; text-decoration: none; }
 /* ---- Dark mode overrides ---- */
 [data-theme="dark"] .debt-source-header:hover { background: rgba(255,255,255,0.04); }
 [data-theme="dark"] .debt-source-card { border-color: var(--clr-border); }
+[data-theme="dark"] .debt-dash-strip { box-shadow: 0 2px 8px rgba(217,119,6,0.08), 0 1px 2px rgba(0,0,0,0.2); }
+[data-theme="dark"] .debt-dash-strip:hover { box-shadow: 0 4px 12px rgba(217,119,6,0.12), 0 1px 3px rgba(0,0,0,0.3); }
+[data-theme="dark"] .debt-dash-strip:active { background: var(--clr-surface-2); box-shadow: 0 1px 4px rgba(217,119,6,0.06); }
+[data-theme="dark"] .debt-dash-strip-icon { background: rgba(217,119,6,0.15); border-color: rgba(217,119,6,0.2); }

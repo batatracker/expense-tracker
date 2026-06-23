@@ -586,18 +586,28 @@
             </template>
           </div>
 
-          <!-- Outstanding debts widget -->
-          <div class="summary-card debt-dashboard-widget" x-show="debtSummary.length > 0" @click="navigate('debts')" role="button" style="cursor:pointer">
-            <div class="summary-label" x-text="t('dashboard.total_outstanding')"></div>
-            <div>
-              <template x-for="(item, i) in debtSummary" :key="item.currency">
-                <div class="summary-amount" style="font-size:22px;line-height:1.3"
-                     x-text="formatCurrency(item.total, item.currency)"></div>
-              </template>
+          <!-- Outstanding debts strip -->
+          <div class="debt-dash-strip" x-show="debtSummary.length > 0"
+               @click="navigate('debts')" role="button" tabindex="0"
+               @keydown.enter="navigate('debts')" @keydown.space.prevent="navigate('debts')">
+            <div class="debt-dash-strip-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             </div>
-            <div style="font-size:12px;color:var(--clr-primary);margin-top:var(--sp-2);display:flex;align-items:center;gap:4px">
-              <span x-text="t('dashboard.view_debts')"></span>
-              <svg width="12" height="12"><use href="#icon-chevron-right"/></svg>
+            <div class="debt-dash-strip-body">
+              <div class="debt-dash-strip-label" x-text="t('dashboard.total_outstanding')"></div>
+              <div class="debt-dash-strip-amounts">
+                <template x-for="(item, i) in debtSummary" :key="item.currency">
+                  <span>
+                    <span x-show="i > 0" class="debt-dash-sep">·</span>
+                    <span x-text="formatCurrency(item.total, item.currency)"></span>
+                  </span>
+                </template>
+              </div>
+              <div class="debt-dash-strip-meta"
+                   x-text="activeCreditorCount + (activeCreditorCount === 1 ? ' creditor' : ' creditors')"></div>
+            </div>
+            <div class="debt-dash-strip-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
           </div>
 
@@ -608,28 +618,36 @@
             </div>
           </template>
 
-          <!-- Charts (only when data available) -->
+          <!-- Charts section — collapsible -->
           <template x-if="!isLoading">
             <div>
-              <div class="dash-charts-grid">
-                <!-- Category breakdown -->
-                <div class="chart-card">
-                  <div class="chart-title" x-text="t('dashboard.spending_by_category')"></div>
-                  <div class="chart-wrap">
-                    <canvas id="category-chart"></canvas>
-                  </div>
-                </div>
+              <!-- Section toggle header -->
+              <button class="dash-section-toggle" @click="chartsOpen = !chartsOpen" :aria-expanded="chartsOpen.toString()">
+                <span class="dash-section-label" x-text="t('dashboard.analysis')"></span>
+                <svg class="dash-section-chevron" :class="chartsOpen ? '' : 'collapsed'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
 
-                <!-- Monthly trend -->
-                <div class="chart-card">
-                  <div class="chart-title" x-text="t('dashboard.trend')"></div>
-                  <div class="chart-wrap">
-                    <canvas id="trend-chart"></canvas>
+              <div x-show="chartsOpen" x-collapse>
+                <div class="dash-charts-grid">
+                  <!-- Category breakdown -->
+                  <div class="chart-card">
+                    <div class="chart-title" x-text="t('dashboard.spending_by_category')"></div>
+                    <div class="chart-wrap">
+                      <canvas id="category-chart"></canvas>
+                    </div>
+                  </div>
+
+                  <!-- Monthly trend -->
+                  <div class="chart-card">
+                    <div class="chart-title" x-text="t('dashboard.trend')"></div>
+                    <div class="chart-wrap">
+                      <canvas id="trend-chart"></canvas>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Recent expenses -->
+              <!-- Recent expenses — always visible -->
               <div class="chart-card">
                 <div class="flex items-center justify-between" style="margin-bottom:var(--sp-4)">
                   <div class="chart-title" style="margin-bottom:0" x-text="t('dashboard.recent_expenses')"></div>
@@ -1421,6 +1439,11 @@
             </template>
           </datalist>
           <div class="form-error" x-show="debtFormErrors.source" x-text="debtFormErrors.source"></div>
+        </div>
+        <!-- Date incurred -->
+        <div class="form-group">
+          <label class="form-label" x-text="t('debts.date')"></label>
+          <input type="date" class="form-input" x-model="debtForm.date">
         </div>
         <!-- Amount + Currency -->
         <div class="form-row">

@@ -101,9 +101,9 @@ const AppScript = (() => {
   const SCRIPT_SOURCE = `// ExpenseTracker — Apps Script backend
 // Deploy: Extensions → Apps Script → Deploy → New deployment
 //   Type: Web app | Execute as: Me | Who has access: Anyone
-var SCRIPT_VERSION = 2;
+var SCRIPT_VERSION = 3;
 var COLS = ['ID','Date','Amount','Currency','Category','Merchant','Notes','Receipt URL','Created At'];
-var DEBT_COLS = ['ID','Source','Total Amount','Outstanding Balance','Currency','Due Date','Notes','Status','Created At'];
+var DEBT_COLS = ['ID','Source','Date','Total Amount','Outstanding Balance','Currency','Due Date','Notes','Status','Created At'];
 var PAYMENT_COLS = ['ID','Debt ID','Amount','Currency','Date','Notes','Created At'];
 var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -244,6 +244,7 @@ function readDebts(ss) {
     var r = rows[i], id = (r[ci(h,'id')]||'').toString().trim();
     if (!id) continue;
     out.push({ id:id, source:(r[ci(h,'source')]||'').toString().trim(),
+      date:toIso((r[ci(h,'date')]||'').toString().trim()),
       totalAmount:(r[ci(h,'total amount')]||'0').toString().trim(),
       outstandingBalance:(r[ci(h,'outstanding balance')]||'0').toString().trim(),
       currency:(r[ci(h,'currency')]||'').toString().trim(),
@@ -257,7 +258,7 @@ function readDebts(ss) {
 
 function appendDebt(ss, d) {
   var sh = ensureNamedSheet(ss, 'Debts', DEBT_COLS);
-  sh.appendRow([d.id||'', d.source||'', parseFloat(d.totalAmount)||0,
+  sh.appendRow([d.id||'', d.source||'', d.date||'', parseFloat(d.totalAmount)||0,
     parseFloat(d.outstandingBalance)||0, d.currency||'', d.dueDate||'',
     d.notes||'', d.status||'open', d.createdAt||'']);
   return { ok: true };
@@ -267,7 +268,7 @@ function updateDebt(ss, d) {
   var loc = findRowInSheet(ss, 'Debts', d.id);
   if (!loc) return { error: 'Not found' };
   loc.sh.getRange(loc.row,1,1,DEBT_COLS.length).setValues([[d.id||'', d.source||'',
-    parseFloat(d.totalAmount)||0, parseFloat(d.outstandingBalance)||0,
+    d.date||'', parseFloat(d.totalAmount)||0, parseFloat(d.outstandingBalance)||0,
     d.currency||'', d.dueDate||'', d.notes||'', d.status||'open', d.createdAt||'']]);
   return { ok: true };
 }

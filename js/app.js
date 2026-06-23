@@ -80,10 +80,10 @@ function appData() {
     debtForm: {
       id: null,
       source: '',
+      date: '',
       totalAmount: '',
       outstandingBalance: '',
       currency: '',
-      dueDate: '',
       notes: '',
     },
     debtFormErrors: {},
@@ -112,6 +112,7 @@ function appData() {
 
     // ==================  DASHBOARD  ==================
     dashPeriod: 'this-month',
+    chartsOpen: true,
 
     // ==================  TOAST  ==================
     toastMessage: '',
@@ -724,11 +725,16 @@ function appData() {
       return Object.entries(byCurrency).map(([currency, total]) => ({ currency, total }));
     },
 
+    get activeCreditorCount() {
+      return this.groupedDebts.filter(g => g.totalOutstanding > 0).length;
+    },
+
     openAddDebt() {
       this.isEditingDebt = false;
       this.debtForm = {
         id: null,
         source: '',
+        date: new Date().toISOString().slice(0, 10),
         totalAmount: '',
         outstandingBalance: '',
         currency: this.defaultCurrency,
@@ -743,6 +749,7 @@ function appData() {
       this.debtForm = {
         id: debt.id,
         source: debt.source,
+        date: debt.date || new Date().toISOString().slice(0, 10),
         totalAmount: debt.totalAmount,
         outstandingBalance: debt.outstandingBalance,
         currency: debt.currency,
@@ -773,6 +780,7 @@ function appData() {
           const debt = {
             ...this.debtForm,
             source,
+            date: this.debtForm.date || existing?.date || '',
             totalAmount: amount.toFixed(2),
             outstandingBalance: parseFloat(this.debtForm.outstandingBalance || this.debtForm.totalAmount).toFixed(2),
             currency: this.debtForm.currency.toUpperCase(),
@@ -787,6 +795,7 @@ function appData() {
             id: crypto.randomUUID(),
             source,
             totalAmount: amount.toFixed(2),
+            date: this.debtForm.date || new Date().toISOString().slice(0, 10),
             outstandingBalance: amount.toFixed(2),
             currency: this.debtForm.currency.toUpperCase(),
             dueDate: '',
@@ -1299,31 +1308,45 @@ function appData() {
       // 6-month rolling trend — use primary currency expenses only (meaningful chart)
       const now = new Date();
       const monthTrend = [];
+      const monthDebtPayments = [];
+      const monthNewDebt = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const monthTotal = this.expenses
-          .filter((e) => {
-            if (!e.date || !e.date.startsWith(monthStr)) return false;
-            // If there are multiple currencies, show only the primary one in the trend
-            if (isMultiCurrency) {
-              const cur = (e.currency || this.defaultCurrency || '').toUpperCase();
-              return cur === primaryCurrency;
-            }
-            return true;
-          })
-          .reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-        monthTrend.push({
-          label: d.toLocaleString(window._activeLocale || 'en-GB', { month: 'short' }),
-          total: monthTotal,
-        });
+        let monthTotal = 0;
+        let debtPaymentTotal = 0;
+        for (const e of this.expenses) {
+          if (!e.date || !e.date.startsWith(monthStr)) continue;
+          if (isMultiCurrency) {
+            const cur = (e.currency || this.defaultCurrency || '').toUpperCase();
+            if (cur !== primaryCurrency) continue;
+          }
+          const amt = parseFloat(e.amount || 0);
+          if (e.category === 'Debt Payment') debtPaymentTotal += amt;
+          else monthTotal += amt;
+        }
+        // Net new debt: debts incurred in this month (use debt.date; fall back to createdAt for older records)
+        let newDebtTotal = 0;
+        for (const debt of this.debts) {
+          const debtDate = debt.date || debt.createdAt || '';
+          if (!debtDate.startsWith(monthStr)) continue;
+          if (isMultiCurrency) {
+            const cur = (debt.currency || '').toUpperCase();
+            if (cur !== primaryCurrency) continue;
+          }
+          newDebtTotal += parseFloat(debt.totalAmount || 0);
+        }
+        const label = d.toLocaleString(window._activeLocale || 'en-GB', { month: 'short' });
+        monthTrend.push({ label, total: monthTotal });
+        monthDebtPayments.push({ label, total: debtPaymentTotal });
+        monthNewDebt.push({ label, total: newDebtTotal });
       }
 
       const recent = [...this.expenses]
         .sort((a, b) => b.date.localeCompare(a.date))
         .slice(0, 5);
 
-      return { currencyTotals, primaryCurrency, isMultiCurrency, byCategory, monthTrend, recent };
+      return { currencyTotals, primaryCurrency, isMultiCurrency, byCategory, monthTrend, monthDebtPayments, monthNewDebt, recent };
     },
 
     initCharts() {
@@ -1384,39 +1407,81 @@ function appData() {
       const trendEl = document.getElementById('trend-chart');
       if (trendEl) {
         if (window._trendChart) window._trendChart.destroy();
+        const hasDebtPayments = data.monthDebtPayments.some((m) => m.total > 0);
+        const hasNewDebt      = data.monthNewDebt.some((m) => m.total > 0);
+        const showLegend      = hasDebtPayments || hasNewDebt;
+        const tickFont        = { family: 'Inter, system-ui, sans-serif', size: 11 };
+        // Spending (purple) and debt payments (amber) share the upward stack.
+        // New debt (red) goes below the axis as a separate negative bar.
+        const datasets = [
+          {
+            label:           t('dashboard.spending'),
+            data:            data.monthTrend.map((m) => m.total),
+            backgroundColor: '#5B4FE9',
+            stack:           'up',
+            borderRadius:    hasDebtPayments ? 0 : 4,
+            borderSkipped:   'bottom',
+          },
+        ];
+        if (hasDebtPayments) {
+          datasets.push({
+            label:           t('dashboard.debt_payments'),
+            data:            data.monthDebtPayments.map((m) => m.total),
+            backgroundColor: '#D97706',
+            stack:           'up',
+            borderRadius:    4,
+            borderSkipped:   'bottom',
+          });
+        }
+        if (hasNewDebt) {
+          datasets.push({
+            label:           t('dashboard.net_debt'),
+            data:            data.monthNewDebt.map((m) => -m.total),
+            backgroundColor: '#EF4444',
+            stack:           'down',
+            borderRadius:    4,
+            borderSkipped:   'top',
+          });
+        }
         window._trendChart = new Chart(trendEl, {
           type: 'bar',
           data: {
             labels: data.monthTrend.map((m) => m.label),
-            datasets: [{
-              data:            data.monthTrend.map((m) => m.total),
-              backgroundColor: '#5B4FE9',
-              borderRadius:    6,
-              borderSkipped:   false,
-            }],
+            datasets,
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-              legend: { display: false },
+              legend: {
+                display: showLegend,
+                position: 'top',
+                align: 'end',
+                labels: { boxWidth: 10, boxHeight: 10, borderRadius: 3, useBorderRadius: true, padding: 12, font: tickFont, color: '#9CA3AF' },
+              },
               tooltip: {
                 callbacks: {
-                  label: (ctx) => ` ${this.formatCurrency(ctx.raw, data.primaryCurrency)}`,
+                  label: (ctx) => {
+                    const val = Math.abs(ctx.raw);
+                    return val > 0 ? ` ${ctx.dataset.label}: ${this.formatCurrency(val, data.primaryCurrency)}` : null;
+                  },
                 },
+                filter: (item) => Math.abs(item.raw) > 0,
               },
             },
             scales: {
               x: {
-                grid:  { display: false },
-                ticks: { font: { family: 'Inter, system-ui, sans-serif', size: 11 }, color: '#9CA3AF' },
+                stacked: true,
+                grid:    { display: false },
+                ticks:   { font: tickFont, color: '#9CA3AF' },
               },
               y: {
-                grid:  { color: '#F1F4F9', drawBorder: false },
-                ticks: {
-                  font:     { family: 'Inter, system-ui, sans-serif', size: 11 },
+                stacked: true,
+                grid:    { color: '#F1F4F9', drawBorder: false },
+                ticks:   {
+                  font:     tickFont,
                   color:    '#9CA3AF',
-                  callback: (v) => this.formatCurrencyCompact(v, data.primaryCurrency),
+                  callback: (v) => this.formatCurrencyCompact(Math.abs(v), data.primaryCurrency),
                 },
               },
             },
