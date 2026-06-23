@@ -9,6 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Expenses">
   <meta name="theme-color" content="#5B4FE9">
   <meta name="description" content="Track expenses. Data lives in your own Google Sheet.">
+  <!-- Prevent stale caches: instruct the browser to always revalidate this document -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 
   <title>Expense Tracker</title>
 
@@ -21,7 +25,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/app.css">
+  <!-- Cache-busting: ?v= suffix forces a fresh fetch when assets change.
+       Bump the version in config.js (APP_VERSION) and here whenever JS or CSS changes. -->
+  <link rel="stylesheet" href="css/app.css?v=1.5.1">
 
   <!-- emoji-picker-element: full-featured emoji picker web component -->
   <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
@@ -119,6 +125,13 @@
     <symbol id="icon-debt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
     </symbol>
+    <symbol id="icon-income" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+    </symbol>
+    <symbol id="icon-reconcile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+      <path d="M12 8v4l3 3"/>
+    </symbol>
     <symbol id="icon-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="9 18 15 12 9 6"/>
     </symbol>
@@ -139,13 +152,13 @@
 <!-- ================================================================
      SCRIPTS — loaded before Alpine so appData() is defined
      ================================================================ -->
-<script src="config.js"></script>
-<script src="js/i18n.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/sheets.js"></script>
-<script src="js/drive.js"></script>
-<script src="js/appscript.js"></script>
-<script src="js/app.js"></script>
+<script src="config.js?v=1.5.1"></script>
+<script src="js/i18n.js?v=1.5.1"></script>
+<script src="js/auth.js?v=1.5.1"></script>
+<script src="js/sheets.js?v=1.5.1"></script>
+<script src="js/drive.js?v=1.5.1"></script>
+<script src="js/appscript.js?v=1.5.1"></script>
+<script src="js/app.js?v=1.5.1"></script>
 
 <!-- ================================================================
      APP ROOT
@@ -174,6 +187,14 @@
       </svg>
     </div>
     <h1 class="signin-title" x-text="t('setup.title')"></h1>
+
+    <!-- Locale switcher -->
+    <div class="wizard-locale-switcher">
+      <button class="wizard-locale-btn" :class="{active: _activeLocale === 'en-GB'}"
+              @click="switchLocale('en-GB')">🇬🇧</button>
+      <button class="wizard-locale-btn" :class="{active: _activeLocale === 'es-AR'}"
+              @click="switchLocale('es-AR')">🇦🇷</button>
+    </div>
 
     <!-- ── Step 1: mode selection ── -->
     <div x-show="!setupMode" style="width:100%;max-width:380px">
@@ -491,6 +512,10 @@
           <svg width="18" height="18"><use href="#icon-debt"/></svg>
           <span x-text="t('nav.debts')"></span>
         </button>
+        <button class="sidebar-nav-item" :class="{active: currentView === 'income'}" @click="navigate('income')">
+          <svg width="18" height="18"><use href="#icon-income"/></svg>
+          <span x-text="t('nav.income')"></span>
+        </button>
       </div>
       <div style="flex:1"></div>
       <button class="sidebar-nav-item sidebar-dark-toggle" @click="toggleDarkMode()" :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
@@ -560,28 +585,58 @@
             </template>
           </div>
 
-          <!-- Summary card — handles single or multiple currencies -->
+          <!-- Summary card — handles single or multiple currencies + income -->
           <div class="summary-card">
-            <div class="summary-label" x-text="t('dashboard.total_spent')"></div>
-            <!-- No expenses in period -->
-            <template x-if="dashboardSummary.currencyTotals.length === 0">
-              <div class="summary-amount" x-text="defaultCurrency ? formatCurrency(0, defaultCurrency) : '0.00'"></div>
-            </template>
-            <!-- Single currency (the common case) -->
-            <template x-if="dashboardSummary.currencyTotals.length === 1">
-              <div class="summary-amount"
-                   x-text="formatCurrency(dashboardSummary.currencyTotals[0].total, dashboardSummary.currencyTotals[0].currency)">
+            <!-- Income data visible: show full breakdown -->
+            <template x-if="income.length > 0 || currentMonthIncome > 0">
+              <div class="summary-grid">
+                <div class="summary-grid-item">
+                  <div class="summary-grid-label" x-text="t('dashboard.income_this_month')"></div>
+                  <div class="summary-grid-value text-success" x-text="formatCurrency(currentMonthIncome, defaultCurrency)"></div>
+                </div>
+                <div class="summary-grid-item">
+                  <div class="summary-grid-label" x-text="t('dashboard.expenses_this_month')"></div>
+                  <div class="summary-grid-value text-danger"
+                       x-text="formatCurrency(dashboardSummary.currencyTotals.length > 0 ? dashboardSummary.currencyTotals[0].total : 0, dashboardSummary.currencyTotals.length > 0 ? dashboardSummary.currencyTotals[0].currency : defaultCurrency)"></div>
+                </div>
+                <div class="summary-grid-item summary-grid-item--full">
+                  <div class="summary-grid-label" x-text="t('dashboard.total_carry_over')"></div>
+                  <div class="summary-net-row">
+                    <svg x-show="totalNetBalance < 0" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                         style="color:var(--c-danger);flex-shrink:0">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <div class="summary-grid-value summary-net-value"
+                         :class="totalNetBalance >= 0 ? 'text-success' : 'text-danger'"
+                         x-text="formatCurrency(totalNetBalance, defaultCurrency)"></div>
+                  </div>
+                </div>
               </div>
             </template>
-            <!-- Multiple currencies — stack them -->
-            <template x-if="dashboardSummary.currencyTotals.length > 1">
+            <!-- No income tracked: classic expense-only view -->
+            <template x-if="income.length === 0 && currentMonthIncome === 0">
               <div>
-                <template x-for="entry in dashboardSummary.currencyTotals" :key="entry.currency">
-                  <div class="summary-amount" style="font-size:22px;line-height:1.3"
-                       x-text="formatCurrency(entry.total, entry.currency)"></div>
+                <div class="summary-label" x-text="t('dashboard.total_spent')"></div>
+                <template x-if="dashboardSummary.currencyTotals.length === 0">
+                  <div class="summary-amount" x-text="defaultCurrency ? formatCurrency(0, defaultCurrency) : '0.00'"></div>
                 </template>
-                <div style="font-size:11px;opacity:0.6;margin-top:4px"
-                     x-text="t('dashboard.across_currencies').replace('{n}', dashboardSummary.currencyTotals.length)"></div>
+                <template x-if="dashboardSummary.currencyTotals.length === 1">
+                  <div class="summary-amount"
+                       x-text="formatCurrency(dashboardSummary.currencyTotals[0].total, dashboardSummary.currencyTotals[0].currency)">
+                  </div>
+                </template>
+                <template x-if="dashboardSummary.currencyTotals.length > 1">
+                  <div>
+                    <template x-for="entry in dashboardSummary.currencyTotals" :key="entry.currency">
+                      <div class="summary-amount" style="font-size:22px;line-height:1.3"
+                           x-text="formatCurrency(entry.total, entry.currency)"></div>
+                    </template>
+                    <div style="font-size:11px;opacity:0.6;margin-top:4px"
+                         x-text="t('dashboard.across_currencies').replace('{n}', dashboardSummary.currencyTotals.length)"></div>
+                  </div>
+                </template>
               </div>
             </template>
           </div>
@@ -937,6 +992,113 @@
         </div>
       </div><!-- /add -->
 
+      <!-- -------- INCOME -------- -->
+      <div x-show="currentView === 'income'">
+        <div class="view-header">
+          <h1 x-text="t('income.title')"></h1>
+          <button class="btn btn-sm income-reconcile-btn" @click="openReconcile()">
+            <svg width="14" height="14"><use href="#icon-reconcile"/></svg>
+            <span x-text="t('income.reconcile_btn')"></span>
+          </button>
+          <button class="btn btn-primary btn-sm income-header-add" @click="openAddIncome()">
+            <svg width="14" height="14"><use href="#icon-plus"/></svg>
+            <span x-text="t('income.add_income')"></span>
+          </button>
+        </div>
+
+        <!-- Net balance summary card -->
+        <div class="income-balance-card" :class="totalNetBalance < 0 ? 'income-balance-card--negative' : ''">
+          <div class="income-balance-row">
+            <span class="income-balance-label" x-text="t('dashboard.total_carry_over')"></span>
+            <div class="income-balance-amount-row">
+              <!-- Warning icon shown when negative -->
+              <svg x-show="totalNetBalance < 0" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                   style="flex-shrink:0;opacity:0.9">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="income-balance-value" x-text="formatCurrency(totalNetBalance, defaultCurrency)"></span>
+            </div>
+          </div>
+          <div x-show="totalNetBalance < 0" class="income-balance-warning-text" x-text="t('income.negative_balance_hint')"></div>
+          <div class="income-balance-row income-balance-sub">
+            <span class="income-balance-label text-muted" x-text="t('dashboard.income_this_month')"></span>
+            <span class="income-balance-sublabel" x-text="formatCurrency(currentMonthIncome, defaultCurrency)"></span>
+          </div>
+          <div class="income-balance-row income-balance-sub">
+            <span class="income-balance-label text-muted" x-text="t('dashboard.expenses_this_month')"></span>
+            <span class="income-balance-sublabel" x-text="formatCurrency(expenses.filter(e => { const now = new Date(); const m = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0'); return e.date && e.date.startsWith(m); }).reduce((s,e) => s + parseFloat(e.amount||0), 0), defaultCurrency)"></span>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <template x-if="income.length === 0">
+          <div class="empty-state">
+            <div class="empty-icon">💰</div>
+            <h3 x-text="t('income.no_income_yet')"></h3>
+            <p x-text="t('income.no_income_desc')"></p>
+          </div>
+        </template>
+
+        <!-- Income list grouped by month -->
+        <div class="income-list" x-show="income.length > 0">
+          <template x-for="group in incomeByMonth" :key="group.key">
+            <div class="income-month-group">
+              <!-- Month header with carry-over -->
+              <div class="income-month-header">
+                <div class="income-month-label" x-text="group.label"></div>
+                <div class="income-month-stats" x-show="carryOverByMonth[group.key] !== undefined">
+                  <span class="income-month-stat text-muted text-xs">
+                    <span x-text="t('income.carry_in') + ': '"></span>
+                    <span x-text="formatCurrency(carryOverByMonth[group.key]?.carryIn || 0, defaultCurrency)"></span>
+                  </span>
+                  <span class="income-month-stat text-xs font-semibold"
+                        :class="(carryOverByMonth[group.key]?.closing || 0) >= 0 ? 'text-success' : 'text-danger'">
+                    <span x-text="t('income.closing_balance') + ': '"></span>
+                    <span x-text="formatCurrency(carryOverByMonth[group.key]?.closing || 0, defaultCurrency)"></span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Entries -->
+              <template x-for="entry in group.entries" :key="entry.id">
+                <div class="income-entry" :class="entry.type === 'reconciliation' ? 'income-entry--reconcile' : 'income-entry--income'">
+                  <div class="income-entry-icon">
+                    <template x-if="entry.type === 'reconciliation'">
+                      <svg width="16" height="16"><use href="#icon-reconcile"/></svg>
+                    </template>
+                    <template x-if="entry.type !== 'reconciliation'">
+                      <svg width="16" height="16"><use href="#icon-income"/></svg>
+                    </template>
+                  </div>
+                  <div class="income-entry-body">
+                    <div class="income-entry-source" x-text="entry.type === 'reconciliation' ? t('income.balance_adjustment') : entry.source"></div>
+                    <div class="income-entry-meta text-xs text-muted">
+                      <span x-text="formatDateShort(entry.date)"></span>
+                      <template x-if="entry.notes">
+                        <span> · <span x-text="entry.notes"></span></span>
+                      </template>
+                    </div>
+                  </div>
+                  <div class="income-entry-amount" :class="entry.type === 'reconciliation' ? 'income-amount--reconcile' : 'income-amount--positive'">
+                    <span x-text="entry.type === 'reconciliation' ? (parseFloat(entry.amount) >= 0 ? '+' : '') + formatCurrency(entry.amount, entry.currency || defaultCurrency) : formatCurrency(entry.amount, entry.currency || defaultCurrency)"></span>
+                  </div>
+                  <button class="income-entry-delete" @click.stop="confirmDeleteIncome(entry)" aria-label="Delete">
+                    <svg width="14" height="14"><use href="#icon-trash"/></svg>
+                  </button>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <!-- FAB -->
+        <button class="income-fab" @click="openAddIncome()" :aria-label="t('income.add_income')">
+          <svg width="22" height="22"><use href="#icon-plus"/></svg>
+        </button>
+      </div><!-- /income -->
+
       <!-- -------- SETTINGS -------- -->
       <div x-show="currentView === 'settings'">
         <div class="view-header">
@@ -1241,7 +1403,7 @@
                 </div>
                 <div class="settings-row-action" style="font-size:11px;color:var(--clr-danger)" x-text="t('settings.remove')"></div>
               </div>
-              <div class="settings-row" @click="signOut()" role="button" tabindex="0" @keydown.enter="signOut()">
+              <div class="settings-row" x-show="appMode !== 'appscript'" @click="signOut()" role="button" tabindex="0" @keydown.enter="signOut()">
                 <div class="settings-row-icon" style="background:var(--clr-danger-bg);color:var(--clr-danger)">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 </div>
@@ -1362,6 +1524,9 @@
                         <span class="debt-paid-badge" x-show="debt.status === 'paid'" x-text="t('debts.paid_badge')"></span>
                         <button class="btn btn-sm btn-primary" x-show="debt.status !== 'paid'"
                                 @click.stop="openPaymentForm(debt)" x-text="t('debts.pay')"></button>
+                        <button class="btn btn-sm btn-ghost" x-show="debt.status !== 'paid'"
+                                style="color:var(--clr-success,#10B981);border-color:var(--clr-success,#10B981)"
+                                @click.stop="openPaymentForm(debt, true)" x-text="t('debts.settle_full')"></button>
                         <button class="btn btn-sm btn-ghost" @click.stop="openEditDebt(debt)">
                           <svg width="14" height="14"><use href="#icon-edit"/></svg>
                         </button>
@@ -1549,6 +1714,133 @@
     </div>
 
     <!-- ============================================================
+         INCOME ENTRY FORM MODAL
+         ============================================================ -->
+    <div class="overlay" x-show="showIncomeForm"
+         @click="closeIncomeForm()"
+         x-transition:enter="fade-enter-active" x-transition:enter-start="fade-enter-from"
+         x-transition:leave="fade-enter-active" x-transition:leave-end="fade-enter-from"
+         style="z-index:800"></div>
+
+    <div class="bottom-sheet" x-show="showIncomeForm" style="z-index:900"
+         x-transition:enter="slide-up-enter-active" x-transition:enter-start="slide-up-enter-from"
+         x-transition:leave="slide-up-leave-active" x-transition:leave-end="slide-up-leave-to"
+         role="dialog" aria-modal="true" :aria-label="t('income.add_title')">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="text-base font-semibold" x-text="t('income.add_title')"></div>
+        <button class="sheet-close" @click="closeIncomeForm()" aria-label="Close">
+          <svg width="16" height="16"><use href="#icon-close"/></svg>
+        </button>
+      </div>
+      <div class="sheet-body" style="padding-bottom:var(--sp-4)">
+        <!-- Source -->
+        <div class="form-group">
+          <label class="form-label"><span x-text="t('income.source')"></span> <span class="text-danger">*</span></label>
+          <input type="text" class="form-input" :class="{error: incomeFormErrors.source}"
+                 x-model="incomeForm.source" :placeholder="t('income.source.placeholder')" autocomplete="off">
+          <div class="form-error" x-show="incomeFormErrors.source" x-text="incomeFormErrors.source"></div>
+        </div>
+        <!-- Amount + Currency -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label"><span x-text="t('form.amount')"></span> <span class="text-danger">*</span></label>
+            <div class="amount-input-group" :class="{error: incomeFormErrors.amount}">
+              <span class="amount-currency-badge income-amount-badge" x-text="incomeForm.currency || defaultCurrency || '¤'"></span>
+              <input type="number" class="amount-number-input"
+                     x-model="incomeForm.amount" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
+            </div>
+            <div class="form-error" x-show="incomeFormErrors.amount" x-text="incomeFormErrors.amount"></div>
+          </div>
+          <div class="form-group" style="width:80px">
+            <label class="form-label" x-text="t('form.currency')"></label>
+            <input type="text" class="form-input" x-model="incomeForm.currency"
+                   maxlength="3" style="text-transform:uppercase;text-align:center" placeholder="USD">
+          </div>
+        </div>
+        <!-- Date -->
+        <div class="form-group">
+          <label class="form-label" x-text="t('form.date')"></label>
+          <input type="date" class="form-input" x-model="incomeForm.date">
+        </div>
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label" x-text="t('income.notes')"></label>
+          <textarea class="form-textarea" x-model="incomeForm.notes"
+                    :placeholder="t('income.notes.placeholder')" rows="2"></textarea>
+        </div>
+        <!-- Buttons -->
+        <div class="btn-row" style="margin-top:var(--sp-4);padding:0">
+          <button class="btn btn-secondary" @click="closeIncomeForm()" x-text="t('form.cancel')"></button>
+          <button class="btn btn-income flex-1" @click="saveIncome()" :disabled="isSavingIncome">
+            <span x-show="!isSavingIncome" x-text="t('income.save')"></span>
+            <span x-show="isSavingIncome" x-text="t('form.saving')"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         RECONCILIATION FORM MODAL
+         ============================================================ -->
+    <div class="overlay" x-show="showReconcileForm"
+         @click="closeReconcileForm()"
+         x-transition:enter="fade-enter-active" x-transition:enter-start="fade-enter-from"
+         x-transition:leave="fade-enter-active" x-transition:leave-end="fade-enter-from"
+         style="z-index:820"></div>
+
+    <div class="bottom-sheet" x-show="showReconcileForm" style="z-index:920"
+         x-transition:enter="slide-up-enter-active" x-transition:enter-start="slide-up-enter-from"
+         x-transition:leave="slide-up-leave-active" x-transition:leave-end="slide-up-leave-to"
+         role="dialog" aria-modal="true" :aria-label="t('reconcile.title')">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="text-base font-semibold" x-text="t('reconcile.title')"></div>
+        <button class="sheet-close" @click="closeReconcileForm()" aria-label="Close">
+          <svg width="16" height="16"><use href="#icon-close"/></svg>
+        </button>
+      </div>
+      <div class="sheet-body" style="padding-bottom:var(--sp-4)">
+        <!-- Tracked balance reference -->
+        <div class="reconcile-balance-ctx">
+          <span class="text-xs text-muted" x-text="t('reconcile.tracked_balance') + ':'"></span>
+          <span class="font-semibold" :class="reconcileTrackedBalance >= 0 ? 'text-success' : 'text-danger'"
+                x-text="formatCurrency(reconcileTrackedBalance, defaultCurrency)"></span>
+        </div>
+        <!-- Signed adjustment amount -->
+        <div class="form-group">
+          <label class="form-label"><span x-text="t('reconcile.adjustment_amount')"></span> <span class="text-danger">*</span></label>
+          <div class="amount-input-group" :class="{error: reconcileFormErrors.amount}">
+            <span class="amount-currency-badge income-reconcile-badge">±</span>
+            <input type="number" class="amount-number-input"
+                   x-model="reconcileForm.amount" placeholder="e.g. -50 or +120" step="0.01" inputmode="decimal">
+          </div>
+          <div class="form-error" x-show="reconcileFormErrors.amount" x-text="reconcileFormErrors.amount"></div>
+          <p class="text-xs text-muted" style="margin-top:var(--sp-1)" x-text="t('reconcile.adjustment_hint')"></p>
+        </div>
+        <!-- Date -->
+        <div class="form-group">
+          <label class="form-label" x-text="t('form.date')"></label>
+          <input type="date" class="form-input" x-model="reconcileForm.date">
+        </div>
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label" x-text="t('income.notes')"></label>
+          <textarea class="form-textarea" x-model="reconcileForm.notes"
+                    :placeholder="t('income.notes.placeholder')" rows="2"></textarea>
+        </div>
+        <!-- Buttons -->
+        <div class="btn-row" style="margin-top:var(--sp-4);padding:0">
+          <button class="btn btn-secondary" @click="closeReconcileForm()" x-text="t('form.cancel')"></button>
+          <button class="btn btn-warning flex-1" @click="saveReconciliation()" :disabled="isSavingReconcile">
+            <span x-show="!isSavingReconcile" x-text="t('reconcile.save')"></span>
+            <span x-show="isSavingReconcile" x-text="t('form.saving')"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
          BOTTOM NAVIGATION
          ============================================================ -->
     <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
@@ -1571,6 +1863,11 @@
               @click="navigate('debts')" :aria-label="t('nav.debts')" role="tab" :aria-selected="currentView === 'debts'">
         <svg width="20" height="20"><use href="#icon-debt"/></svg>
         <span x-text="t('nav.debts')"></span>
+      </button>
+      <button class="nav-tab" :class="{active: currentView === 'income'}"
+              @click="navigate('income')" :aria-label="t('nav.income')" role="tab" :aria-selected="currentView === 'income'">
+        <svg width="20" height="20"><use href="#icon-income"/></svg>
+        <span x-text="t('nav.income')"></span>
       </button>
       <button class="nav-tab" :class="{active: currentView === 'settings'}"
               @click="navigate('settings')" :aria-label="t('nav.settings')" role="tab" :aria-selected="currentView === 'settings'">

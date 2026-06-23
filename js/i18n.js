@@ -187,6 +187,7 @@ const I18n = (() => {
       'toast.saved':               'Expense saved.',
       'toast.updated':             'Expense updated.',
       'toast.save_failed':         'Failed to save. Please try again.',
+      'toast.script_needs_update': 'Script outdated — income requires the latest deployment.',
       'toast.receipt_added':       'Receipt added.',
       'toast.receipt_failed':      'Receipt upload failed.',
       'toast.deleted':             'Expense deleted.',
@@ -224,6 +225,7 @@ const I18n = (() => {
       'debts.save':                     'Save Debt',
       'debts.cancel':                   'Cancel',
       'debts.pay':                      'Pay',
+      'debts.settle_full':              'Settle in full',
       'debts.payment_history':          'Payment History',
       'debts.no_payments':              'No payments recorded yet.',
       'debts.delete_confirm':           'Delete this debt? This cannot be undone.',
@@ -246,6 +248,49 @@ const I18n = (() => {
       'toast.debt_save_failed':         'Failed to save debt. Please try again.',
       'toast.payment_saved':            'Payment recorded.',
       'toast.payment_save_failed':      'Failed to record payment. Please try again.',
+
+      // Income
+      'nav.income':                   'Income',
+      'income.title':                 'Income',
+      'income.add_income':            'Add Income',
+      'income.source':                'Source',
+      'income.source.placeholder':    'e.g. Salary, Freelance, Transfer',
+      'income.notes':                 'Notes',
+      'income.notes.placeholder':     'Any extra details…',
+      'income.no_income_yet':         'No income recorded yet',
+      'income.no_income_desc':        'Tap the + button to add your first income entry.',
+      'income.carry_in':              'Carry-in',
+      'income.closing_balance':       'Balance',
+      'income.month_income':          'Income',
+      'income.balance_adjustment':    'Balance adjustment',
+      'income.delete_confirm':        'Delete this entry? This cannot be undone.',
+      'income.negative_balance_hint': 'Balance is negative — reconciliation recommended.',
+      'income.reconcile_btn':         'Reconcile',
+      'income.add_title':             'Add Income',
+      'income.save':                  'Save Income',
+
+      // Reconciliation
+      'reconcile.title':              'Reconcile Balance',
+      'reconcile.tracked_balance':    'Current tracked balance',
+      'reconcile.adjustment_amount':  'Adjustment amount',
+      'reconcile.adjustment_hint':    'Positive if real cash exceeds tracked, negative if less.',
+      'reconcile.save':               'Save Adjustment',
+
+      // Dashboard income
+      'dashboard.income_this_month':  'Income this month',
+      'dashboard.expenses_this_month':'Expenses this month',
+      'dashboard.net_this_month':     'Net this month',
+      'dashboard.total_carry_over':   'Net balance',
+
+      // Errors
+      'error.income_source':          'Please enter an income source.',
+      'error.income_amount':          'Please enter a valid positive amount.',
+      'error.reconcile_amount':       'Adjustment must be non-zero.',
+
+      // Toasts
+      'toast.income_added':           'Income saved.',
+      'toast.income_deleted':         'Entry deleted.',
+      'toast.reconciliation_saved':   'Balance adjustment saved.',
 
       // Category display names (English keys = display values)
       'Food & Dining':       'Food & Dining',
@@ -429,6 +474,7 @@ const I18n = (() => {
       'toast.saved':               'Gasto guardado.',
       'toast.updated':             'Gasto actualizado.',
       'toast.save_failed':         'Error al guardar. Intentá de nuevo.',
+      'toast.script_needs_update': 'Script desactualizado — los ingresos requieren la última versión desplegada.',
       'toast.receipt_added':       'Ticket adjuntado.',
       'toast.receipt_failed':      'Error al subir el ticket.',
       'toast.deleted':             'Gasto eliminado.',
@@ -466,6 +512,7 @@ const I18n = (() => {
       'debts.save':                     'Guardar deuda',
       'debts.cancel':                   'Cancelar',
       'debts.pay':                      'Pagar',
+      'debts.settle_full':              'Saldar deuda',
       'debts.payment_history':          'Historial de pagos',
       'debts.no_payments':              'Sin pagos registrados aún.',
       'debts.delete_confirm':           '¿Eliminar esta deuda? Esta acción no se puede deshacer.',
@@ -488,6 +535,49 @@ const I18n = (() => {
       'toast.debt_save_failed':         'Error al guardar la deuda. Intentá de nuevo.',
       'toast.payment_saved':            'Pago registrado.',
       'toast.payment_save_failed':      'Error al registrar el pago. Intentá de nuevo.',
+
+      // Income
+      'nav.income':                   'Ingresos',
+      'income.title':                 'Ingresos',
+      'income.add_income':            'Agregar ingreso',
+      'income.source':                'Fuente',
+      'income.source.placeholder':    'Ej.: Sueldo, Freelance, Transferencia',
+      'income.notes':                 'Notas',
+      'income.notes.placeholder':     'Detalles adicionales…',
+      'income.no_income_yet':         'Sin ingresos registrados aún',
+      'income.no_income_desc':        'Tocá el botón + para agregar tu primer ingreso.',
+      'income.carry_in':              'Arrastre',
+      'income.closing_balance':       'Saldo',
+      'income.month_income':          'Ingresos',
+      'income.balance_adjustment':    'Ajuste de saldo',
+      'income.delete_confirm':        '¿Eliminar este registro? Esta acción no se puede deshacer.',
+      'income.negative_balance_hint': 'El saldo es negativo — se recomienda reconciliar.',
+      'income.reconcile_btn':         'Reconciliar',
+      'income.add_title':             'Agregar ingreso',
+      'income.save':                  'Guardar ingreso',
+
+      // Reconciliation
+      'reconcile.title':              'Reconciliar saldo',
+      'reconcile.tracked_balance':    'Saldo rastreado actual',
+      'reconcile.adjustment_amount':  'Monto del ajuste',
+      'reconcile.adjustment_hint':    'Positivo si el efectivo real supera el rastreado, negativo si es menor.',
+      'reconcile.save':               'Guardar ajuste',
+
+      // Dashboard income
+      'dashboard.income_this_month':  'Ingresos este mes',
+      'dashboard.expenses_this_month':'Gastos este mes',
+      'dashboard.net_this_month':     'Neto este mes',
+      'dashboard.total_carry_over':   'Saldo neto',
+
+      // Errors
+      'error.income_source':          'Ingresá la fuente del ingreso.',
+      'error.income_amount':          'Ingresá un monto positivo válido.',
+      'error.reconcile_amount':       'El ajuste debe ser distinto de cero.',
+
+      // Toasts
+      'toast.income_added':           'Ingreso guardado.',
+      'toast.income_deleted':         'Registro eliminado.',
+      'toast.reconciliation_saved':   'Ajuste de saldo guardado.',
 
       // Category display names (stored as English keys in Google Sheets)
       'Food & Dining':       'Comida y Restaurantes',

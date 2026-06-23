@@ -70,6 +70,37 @@ function appData() {
     showDeleteConfirm: false,
     isDeleting: false,
 
+    // ==================  INCOME  ==================
+    income: [],
+    _incomeTabEnsured: false,
+
+    // Income entry form
+    incomeForm: {
+      id: null,
+      source: '',
+      amount: '',
+      currency: '',
+      date: '',
+      notes: '',
+    },
+    incomeFormErrors: {},
+    showIncomeForm: false,
+    isSavingIncome: false,
+
+    // Reconciliation form
+    reconcileForm: {
+      amount: '',
+      date: '',
+      notes: '',
+    },
+    reconcileFormErrors: {},
+    showReconcileForm: false,
+    isSavingReconcile: false,
+    reconcileTrackedBalance: 0,
+
+    // Delete state for income entries
+    _incomeDeleteConfirm: null,
+
     // ==================  DEBTS  ==================
     debts: [],
     debtPayments: {},      // keyed by debtId → array of payments
@@ -284,6 +315,7 @@ function appData() {
         this.isInitializing = false;
         await this.loadExpenses();
         await this.loadDebts();
+        await this.loadIncome();
         // Load cached sheet URL from localStorage first (works for existing deployments).
         this.sheetDisplayUrl = localStorage.getItem('et_sheet_display_url') || null;
         // Check script version and fetch sheet URL in parallel.
@@ -418,7 +450,7 @@ function appData() {
 
     _handleHash() {
       const hash = window.location.hash.replace('#/', '');
-      const valid = ['dashboard', 'expenses', 'debts', 'settings'];
+      const valid = ['dashboard', 'expenses', 'debts', 'income', 'settings'];
       if (valid.includes(hash)) this.currentView = hash;
     },
 
@@ -574,6 +606,7 @@ function appData() {
       await this._ensureSheet();
       await this.loadExpenses();
       await this.loadDebts();
+      await this.loadIncome();
     },
 
     async _ensureSheet() {
@@ -638,6 +671,20 @@ function appData() {
       return Sheets.deleteDebtPayment(this.sheetId, id);
     },
 
+    // ---- Income adapters ----
+    async _dbReadIncome() {
+      if (this.appMode === 'appscript') return AppScript.readAllIncome();
+      return Sheets.readAllIncome(this.sheetId);
+    },
+    async _dbAppendIncome(entry) {
+      if (this.appMode === 'appscript') return AppScript.appendIncomeEntry(entry);
+      return Sheets.appendIncomeEntry(this.sheetId, entry);
+    },
+    async _dbDeleteIncome(id) {
+      if (this.appMode === 'appscript') return AppScript.deleteIncomeEntry(id);
+      return Sheets.deleteIncomeEntry(this.sheetId, id);
+    },
+
     // ==============================================
     //  DATA
     // ==============================================
@@ -668,6 +715,223 @@ function appData() {
     async refreshExpenses() {
       await this.loadExpenses();
       this.showToast(t('toast.refreshed'), 'success');
+    },
+
+    // ==============================================
+    //  INCOME
+    // ==============================================
+
+    async loadIncome() {
+      if (this.appMode !== 'appscript' && !this.sheetId) return;
+      if (!this._incomeTabEnsured && this.appMode !== 'appscript') {
+        try { await Sheets.ensureIncomeTab(this.sheetId); } catch {}
+        this._incomeTabEnsured = true;
+      }
+      try {
+        this.income = await this._dbReadIncome();
+      } catch (err) {
+        if (err && err.status === 401) { this.handleAuthError(); return; }
+        // Non-fatal: income tab may not exist yet on first load
+      }
+    },
+
+    openAddIncome() {
+      this.incomeForm = {
+        id: null,
+        source: '',
+        amount: '',
+        currency: this.defaultCurrency,
+        date: new Date().toISOString().split('T')[0],
+        notes: '',
+      };
+      this.incomeFormErrors = {};
+      this.showIncomeForm = true;
+    },
+
+    closeIncomeForm() {
+      this.showIncomeForm = false;
+    },
+
+    async saveIncome() {
+      const errors = {};
+      const source = (this.incomeForm.source || '').trim();
+      if (!source) errors.source = t('error.income_source');
+      const amount = parseFloat(this.incomeForm.amount);
+      if (!this.incomeForm.amount || isNaN(amount) || amount <= 0) errors.amount = t('error.income_amount');
+      this.incomeFormErrors = errors;
+      if (Object.keys(errors).length > 0) return;
+
+      this.isSavingIncome = true;
+      try {
+        const entry = {
+          id: crypto.randomUUID(),
+          type: 'income',
+          source,
+          amount: amount.toFixed(2),
+          currency: (this.incomeForm.currency || this.defaultCurrency || '').toUpperCase(),
+          date: this.incomeForm.date,
+          notes: (this.incomeForm.notes || '').trim(),
+          createdAt: new Date().toISOString(),
+        };
+        await this._dbAppendIncome(entry);
+        this.income.push(entry);
+        this.showIncomeForm = false;
+        this.showToast(t('toast.income_added'), 'success');
+      } catch (err) {
+        console.error('[income] saveIncome error:', err);
+        if (err && err.status === 401) { this.handleAuthError(); return; }
+        const msg = (err && err.message === 'Unknown action')
+          ? t('toast.script_needs_update') : t('toast.save_failed');
+        this.showToast(msg, 'error');
+      } finally {
+        this.isSavingIncome = false;
+      }
+    },
+
+    openReconcile() {
+      const tracked = this.totalNetBalance;
+      this.reconcileTrackedBalance = tracked;
+      this.reconcileForm = {
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        notes: '',
+      };
+      this.reconcileFormErrors = {};
+      this.showReconcileForm = true;
+    },
+
+    closeReconcileForm() {
+      this.showReconcileForm = false;
+    },
+
+    async saveReconciliation() {
+      const errors = {};
+      const amount = parseFloat(this.reconcileForm.amount);
+      if (!this.reconcileForm.amount || isNaN(amount) || amount === 0) {
+        errors.amount = t('error.reconcile_amount');
+      }
+      this.reconcileFormErrors = errors;
+      if (Object.keys(errors).length > 0) return;
+
+      this.isSavingReconcile = true;
+      try {
+        const entry = {
+          id: crypto.randomUUID(),
+          type: 'reconciliation',
+          source: t('income.balance_adjustment'),
+          amount: amount.toFixed(2),
+          currency: (this.defaultCurrency || '').toUpperCase(),
+          date: this.reconcileForm.date,
+          notes: (this.reconcileForm.notes || '').trim(),
+          createdAt: new Date().toISOString(),
+        };
+        await this._dbAppendIncome(entry);
+        this.income.push(entry);
+        this.showReconcileForm = false;
+        this.showToast(t('toast.reconciliation_saved'), 'success');
+      } catch (err) {
+        console.error('[income] saveReconciliation error:', err);
+        if (err && err.status === 401) { this.handleAuthError(); return; }
+        const msg = (err && err.message === 'Unknown action')
+          ? t('toast.script_needs_update') : t('toast.save_failed');
+        this.showToast(msg, 'error');
+      } finally {
+        this.isSavingReconcile = false;
+      }
+    },
+
+    async confirmDeleteIncome(entry) {
+      if (!confirm(t('income.delete_confirm'))) return;
+      try {
+        await this._dbDeleteIncome(entry.id);
+        this.income = this.income.filter(e => e.id !== entry.id);
+        this.showToast(t('toast.income_deleted'), 'success');
+      } catch (err) {
+        if (err && err.status === 401) { this.handleAuthError(); return; }
+        this.showToast(t('toast.delete_failed'), 'error');
+      }
+    },
+
+    get incomeByMonth() {
+      // Group income (and reconciliation) entries by YYYY-MM, newest month first
+      const groups = {};
+      for (const e of this.income) {
+        if (!e.date) continue;
+        const key = e.date.slice(0, 7); // YYYY-MM
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(e);
+      }
+      return Object.keys(groups)
+        .sort((a, b) => b.localeCompare(a))
+        .map(key => ({
+          key,
+          label: (() => {
+            const [y, m] = key.split('-').map(Number);
+            return new Date(y, m - 1, 1).toLocaleString(window._activeLocale || 'en-GB', { month: 'long', year: 'numeric' });
+          })(),
+          entries: groups[key].sort((a, b) => b.date.localeCompare(a.date)),
+        }));
+    },
+
+    get carryOverByMonth() {
+      // Build sorted list of all months that have income or expense data
+      const monthSet = new Set();
+      for (const e of this.income) { if (e.date) monthSet.add(e.date.slice(0, 7)); }
+      for (const e of this.expenses) { if (e.date) monthSet.add(e.date.slice(0, 7)); }
+
+      const sortedMonths = [...monthSet].sort(); // oldest first
+      const result = {}; // YYYY-MM → { carryIn, income, reconciliation, expenses, closing }
+
+      let runningBalance = 0;
+      for (const month of sortedMonths) {
+        const carryIn = runningBalance;
+        let monthIncome = 0;
+        let monthReconciliation = 0;
+        let monthExpenses = 0;
+
+        for (const e of this.income) {
+          if (!e.date || e.date.slice(0, 7) !== month) continue;
+          const amt = parseFloat(e.amount || 0);
+          if (e.type === 'reconciliation') monthReconciliation += amt;
+          else monthIncome += amt;
+        }
+        for (const e of this.expenses) {
+          if (!e.date || e.date.slice(0, 7) !== month) continue;
+          monthExpenses += parseFloat(e.amount || 0);
+        }
+
+        const closing = carryIn + monthIncome + monthReconciliation - monthExpenses;
+        result[month] = { carryIn, income: monthIncome, reconciliation: monthReconciliation, expenses: monthExpenses, closing };
+        runningBalance = closing;
+      }
+      return result;
+    },
+
+    get totalNetBalance() {
+      let total = 0;
+      for (const e of this.income) {
+        total += parseFloat(e.amount || 0);
+      }
+      for (const e of this.expenses) {
+        total -= parseFloat(e.amount || 0);
+      }
+      return total;
+    },
+
+    get currentMonthIncome() {
+      const now = new Date();
+      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      return this.income
+        .filter(e => e.type !== 'reconciliation' && e.date && e.date.startsWith(month))
+        .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    },
+
+    get currentMonthReconciliation() {
+      const now = new Date();
+      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      return this.income
+        .filter(e => e.type === 'reconciliation' && e.date && e.date.startsWith(month))
+        .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     },
 
     // ==============================================
@@ -703,8 +967,8 @@ function appData() {
             debts: [],
           };
         }
-        const outstanding = parseFloat(d.outstandingBalance || 0);
-        const original = parseFloat(d.totalAmount || 0);
+        const outstanding = parseFloat(d.outstandingBalance) || 0;
+        const original = parseFloat(d.totalAmount) || 0;
         groups[key].totalOutstanding += outstanding;
         groups[key].totalOriginal += original;
         groups[key].debts.push(d);
@@ -828,13 +1092,14 @@ function appData() {
       }
     },
 
-    openPaymentForm(debt) {
+    openPaymentForm(debt, prefillFull = false) {
+      const outstanding = parseFloat(debt.outstandingBalance || 0);
       this.paymentForm = {
         debtId: debt.id,
         debtSource: debt.source,
-        outstandingBalance: parseFloat(debt.outstandingBalance || 0),
+        outstandingBalance: outstanding,
         debtCurrency: debt.currency,
-        amount: '',
+        amount: prefillFull ? outstanding.toString() : '',
         currency: debt.currency,
         date: new Date().toISOString().split('T')[0],
         notes: '',
@@ -935,11 +1200,12 @@ function appData() {
     },
 
     debtProgress(group) {
-      const total = group.totalOriginal;
-      const outstanding = group.totalOutstanding;
+      const total = parseFloat(group.totalOriginal) || 0;
+      const outstanding = parseFloat(group.totalOutstanding) || 0;
       if (total <= 0) return 100;
       const paid = total - outstanding;
-      return Math.round((paid / total) * 100);
+      const pct = Math.round((paid / total) * 100);
+      return isNaN(pct) ? 100 : Math.max(0, Math.min(100, pct));
     },
 
     // ==============================================
@@ -1310,6 +1576,7 @@ function appData() {
       const monthTrend = [];
       const monthDebtPayments = [];
       const monthNewDebt = [];
+      const monthIncome = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -1336,17 +1603,25 @@ function appData() {
           }
           newDebtTotal += parseFloat(debt.totalAmount || 0);
         }
+        // Income (excluding reconciliation entries) for this month
+        let incomeTotal = 0;
+        for (const e of this.income) {
+          if (e.type === 'reconciliation') continue;
+          if (!e.date || !e.date.startsWith(monthStr)) continue;
+          incomeTotal += parseFloat(e.amount || 0);
+        }
         const label = d.toLocaleString(window._activeLocale || 'en-GB', { month: 'short' });
         monthTrend.push({ label, total: monthTotal });
         monthDebtPayments.push({ label, total: debtPaymentTotal });
         monthNewDebt.push({ label, total: newDebtTotal });
+        monthIncome.push({ label, total: incomeTotal });
       }
 
       const recent = [...this.expenses]
         .sort((a, b) => b.date.localeCompare(a.date))
         .slice(0, 5);
 
-      return { currencyTotals, primaryCurrency, isMultiCurrency, byCategory, monthTrend, monthDebtPayments, monthNewDebt, recent };
+      return { currencyTotals, primaryCurrency, isMultiCurrency, byCategory, monthTrend, monthDebtPayments, monthNewDebt, monthIncome, recent };
     },
 
     initCharts() {
@@ -1409,16 +1684,20 @@ function appData() {
         if (window._trendChart) window._trendChart.destroy();
         const hasDebtPayments = data.monthDebtPayments.some((m) => m.total > 0);
         const hasNewDebt      = data.monthNewDebt.some((m) => m.total > 0);
-        const showLegend      = hasDebtPayments || hasNewDebt;
+        const hasIncome       = data.monthIncome.some((m) => m.total > 0);
+        const showLegend      = hasIncome || hasDebtPayments || hasNewDebt;
         const tickFont        = { family: 'Inter, system-ui, sans-serif', size: 11 };
         // Spending (purple) and debt payments (amber) share the upward stack.
-        // New debt (red) goes below the axis as a separate negative bar.
+        // Chart layout:
+        //   "expenses" stack (above axis): Spending (purple) + Debt payments (amber)
+        //   "income" stack  (above axis):  Income (green) — a separate parallel bar
+        //   "debt"   stack  (below axis):  New debt (red)
         const datasets = [
           {
             label:           t('dashboard.spending'),
             data:            data.monthTrend.map((m) => m.total),
             backgroundColor: '#5B4FE9',
-            stack:           'up',
+            stack:           'expenses',
             borderRadius:    hasDebtPayments ? 0 : 4,
             borderSkipped:   'bottom',
           },
@@ -1428,7 +1707,17 @@ function appData() {
             label:           t('dashboard.debt_payments'),
             data:            data.monthDebtPayments.map((m) => m.total),
             backgroundColor: '#D97706',
-            stack:           'up',
+            stack:           'expenses',
+            borderRadius:    4,
+            borderSkipped:   'bottom',
+          });
+        }
+        if (hasIncome) {
+          datasets.push({
+            label:           t('dashboard.income_this_month'),
+            data:            data.monthIncome.map((m) => m.total),
+            backgroundColor: '#059669',
+            stack:           'income',
             borderRadius:    4,
             borderSkipped:   'bottom',
           });
@@ -1438,7 +1727,7 @@ function appData() {
             label:           t('dashboard.net_debt'),
             data:            data.monthNewDebt.map((m) => -m.total),
             backgroundColor: '#EF4444',
-            stack:           'down',
+            stack:           'debt',
             borderRadius:    4,
             borderSkipped:   'top',
           });

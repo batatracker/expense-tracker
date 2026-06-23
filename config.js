@@ -8,12 +8,12 @@
 // ============================================================
 
 const CONFIG = {
-  APP_VERSION: '1.4.0',
+  APP_VERSION: '1.5.1',
 
   // Increment this whenever the Apps Script source changes in a way that
   // requires users to re-deploy. The deployed script returns its own version
   // from the 'ping' action; if it differs, the app shows an update prompt.
-  SCRIPT_VERSION: 3,
+  SCRIPT_VERSION: 4,
 
   // Base path for the app deployment (used by i18n locale routing).
   // '/' for root deploys (Netlify, custom domain, localhost).
@@ -83,4 +83,6 @@ const CONFIG = {
 
   DEBT_COLUMNS: ['ID', 'Source', 'Date', 'Total Amount', 'Outstanding Balance', 'Currency', 'Due Date', 'Notes', 'Status', 'Created At'],
   DEBT_PAYMENT_COLUMNS: ['ID', 'Debt ID', 'Amount', 'Currency', 'Date', 'Notes', 'Created At'],
+
+  INCOME_COLUMNS: ['ID', 'Type', 'Source', 'Amount', 'Currency', 'Date', 'Notes', 'Created At'],
 };

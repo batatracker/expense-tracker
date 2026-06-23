@@ -253,6 +253,32 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: var(--sp-2);
   text-align: center;
 }
+.wizard-locale-switcher {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: var(--sp-5);
+}
+.wizard-locale-btn {
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  opacity: 0.55;
+}
+.wizard-locale-btn:hover {
+  background: rgba(255,255,255,0.28);
+  opacity: 0.85;
+}
+.wizard-locale-btn.active {
+  border-color: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.25);
+  opacity: 1;
+}
 .signin-subtitle {
   font-size: 15px;
   color: rgba(255,255,255,0.72);
@@ -1171,6 +1197,12 @@ a { color: inherit; text-decoration: none; }
 
   /* View header: no sticky needed as much; keep it but flush */
   .view-header h1 { font-size: 22px; }
+
+  /* Income: hide FAB, show header add button; widen content */
+  .income-fab { display: none; }
+  .income-header-add { display: flex; }
+  .income-balance-card { margin: var(--sp-4) var(--sp-6); }
+  .income-list { padding: 0 var(--sp-6) var(--sp-8); max-width: 960px; margin: 0 auto; }
 }
 
 /* ============================================================
@@ -1467,3 +1499,232 @@ a { color: inherit; text-decoration: none; }
 [data-theme="dark"] .debt-dash-strip:hover { box-shadow: 0 4px 12px rgba(217,119,6,0.12), 0 1px 3px rgba(0,0,0,0.3); }
 [data-theme="dark"] .debt-dash-strip:active { background: var(--clr-surface-2); box-shadow: 0 1px 4px rgba(217,119,6,0.06); }
 [data-theme="dark"] .debt-dash-strip-icon { background: rgba(217,119,6,0.15); border-color: rgba(217,119,6,0.2); }
+
+/* ============================================================
+   INCOME VIEW
+   ============================================================ */
+
+/* ---- Balance summary card ---- */
+.income-balance-card {
+  margin: var(--sp-4);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-radius: var(--r-xl);
+  padding: var(--sp-5) var(--sp-5);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(5,150,105,0.28), 0 1px 4px rgba(0,0,0,0.08);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.income-balance-card--negative {
+  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+  box-shadow: 0 4px 20px rgba(220,38,38,0.32), 0 1px 4px rgba(0,0,0,0.08);
+}
+.income-balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.income-balance-amount-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.income-balance-row + .income-balance-row { margin-top: var(--sp-2); }
+.income-balance-sub { opacity: 0.82; }
+.income-balance-label { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.85); }
+.income-balance-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+.income-balance-sublabel { font-size: 13px; font-weight: 600; color: #fff; }
+.income-balance-warning-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  margin-top: var(--sp-1);
+  margin-bottom: var(--sp-1);
+}
+.income-balance-card .text-success,
+.income-balance-card .text-danger { color: #fff !important; }
+
+/* Dashboard net balance row with warning icon */
+.summary-net-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* ---- Month group ---- */
+.income-list { padding: 0 var(--sp-4) var(--sp-8); }
+.income-month-group { margin-bottom: var(--sp-5); }
+.income-month-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0 var(--sp-3);
+  border-bottom: 2px solid var(--clr-border);
+  margin-bottom: var(--sp-3);
+}
+.income-month-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--clr-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.income-month-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.income-month-stat { line-height: 1.4; }
+
+/* ---- Entry cards ---- */
+.income-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: var(--clr-surface);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-2);
+  box-shadow: var(--shadow-xs);
+  border-left: 3px solid transparent;
+  transition: box-shadow var(--dur-fast);
+}
+.income-entry--income { border-left-color: #059669; }
+.income-entry--reconcile { border-left-color: #D97706; }
+
+.income-entry-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.income-entry--income .income-entry-icon { background: #ECFDF5; color: #059669; }
+.income-entry--reconcile .income-entry-icon { background: #FFFBEB; color: #D97706; }
+
+.income-entry-body { flex: 1; min-width: 0; }
+.income-entry-source { font-size: 14px; font-weight: 600; color: var(--clr-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.income-entry-meta { margin-top: 2px; }
+
+.income-entry-amount { font-size: 15px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.income-amount--positive { color: #059669; }
+.income-amount--reconcile { color: #D97706; }
+
+.income-entry-delete {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--clr-text-3);
+  transition: color var(--dur-fast), background var(--dur-fast);
+  flex-shrink: 0;
+}
+.income-entry-delete:hover { color: var(--clr-danger); background: var(--clr-danger-bg); }
+
+/* ---- FAB (mobile only) ---- */
+.income-fab {
+  position: fixed;
+  bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom));
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-full);
+  background: #059669;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(5,150,105,0.4), 0 1px 4px rgba(0,0,0,0.1);
+  transition: transform var(--dur-fast), box-shadow var(--dur-fast);
+  z-index: 200;
+}
+.income-fab:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(5,150,105,0.5); }
+.income-fab:active { transform: scale(0.96); }
+
+/* Desktop: hide FAB, show header button */
+.income-header-add { display: none; }
+
+/* ---- Header reconcile button ---- */
+.income-reconcile-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  background: var(--clr-warning-bg);
+  color: var(--clr-warning);
+  border: 1px solid #FCD34D;
+  border-radius: var(--r-full);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---- Reconcile form context ---- */
+.reconcile-balance-ctx {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--clr-warning-bg);
+  border: 1px solid #FCD34D;
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.income-reconcile-badge { background: #FFFBEB; color: #D97706; font-weight: 700; font-size: 16px; }
+.income-amount-badge { background: #ECFDF5; color: #059669; }
+
+/* ---- Income primary button ---- */
+.btn-income {
+  background: #059669;
+  color: #fff;
+  border-radius: var(--r-md);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background var(--dur-fast);
+}
+.btn-income:hover { background: #047857; }
+.btn-income:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ---- Warning / reconcile button ---- */
+.btn-warning {
+  background: #D97706;
+  color: #fff;
+  border-radius: var(--r-md);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background var(--dur-fast);
+}
+.btn-warning:hover { background: #B45309; }
+.btn-warning:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ---- Dashboard income summary grid ---- */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+.summary-grid-item { display: flex; flex-direction: column; gap: 4px; }
+.summary-grid-item--full { grid-column: 1 / -1; border-top: 1px solid rgba(255,255,255,0.15); padding-top: var(--sp-3); }
+.summary-grid-label { font-size: 11px; font-weight: 600; opacity: 0.7; letter-spacing: 0.04em; text-transform: uppercase; }
+.summary-grid-value { font-size: 17px; font-weight: 700; }
+.summary-net-value { font-size: 22px; font-weight: 800; }
+
+/* ---- Dark mode: income ---- */
+[data-theme="dark"] .income-entry { background: var(--clr-surface); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+[data-theme="dark"] .income-entry--income { border-left-color: #34D399; }
+[data-theme="dark"] .income-entry--income .income-entry-icon { background: rgba(52,211,153,0.12); color: #34D399; }
+[data-theme="dark"] .income-amount--positive { color: #34D399; }
+[data-theme="dark"] .income-entry--reconcile { border-left-color: #FCD34D; }
+[data-theme="dark"] .income-entry--reconcile .income-entry-icon { background: rgba(252,211,77,0.12); color: #FCD34D; }
+[data-theme="dark"] .income-amount--reconcile { color: #FCD34D; }
+[data-theme="dark"] .income-balance-card { background: linear-gradient(135deg, #047857 0%, #065f46 100%); }
+[data-theme="dark"] .income-balance-card--negative { background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%); }
+[data-theme="dark"] .reconcile-balance-ctx { background: rgba(217,119,6,0.12); border-color: rgba(252,211,77,0.3); }

@@ -98,20 +98,49 @@ const AppScript = (() => {
     return _call({ action: 'deleteDebtPayment', id });
   }
 
+  async function readAllIncome() {
+    const json = await _call({ action: 'readIncome' });
+    return (json.income || []).map(e => ({ ...e }));
+  }
+
+  async function appendIncomeEntry(entry) {
+    return _call({ action: 'appendIncome', entry });
+  }
+
+  async function deleteIncomeEntry(id) {
+    return _call({ action: 'deleteIncome', id });
+  }
+
   const SCRIPT_SOURCE = `// ExpenseTracker — Apps Script backend
 // Deploy: Extensions → Apps Script → Deploy → New deployment
 //   Type: Web app | Execute as: Me | Who has access: Anyone
-var SCRIPT_VERSION = 3;
+var SCRIPT_VERSION = 4;
 var COLS = ['ID','Date','Amount','Currency','Category','Merchant','Notes','Receipt URL','Created At'];
 var DEBT_COLS = ['ID','Source','Date','Total Amount','Outstanding Balance','Currency','Due Date','Notes','Status','Created At'];
 var PAYMENT_COLS = ['ID','Debt ID','Amount','Currency','Date','Notes','Created At'];
+var INCOME_COLS = ['ID','Type','Source','Amount','Currency','Date','Notes','Created At'];
 var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Returns the active spreadsheet (container-bound) or finds/creates one (standalone).
+function getSpreadsheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (ss) return ss;
+  // Standalone deployment: reuse a stored spreadsheet ID or create a new one.
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('SPREADSHEET_ID');
+  if (id) {
+    try { return SpreadsheetApp.openById(id); } catch(e) {}
+  }
+  ss = SpreadsheetApp.create('ExpenseTracker');
+  props.setProperty('SPREADSHEET_ID', ss.getId());
+  return ss;
+}
 
 function doGet(e) {
   if (!e.parameter.p) return ok({ status: 'ok', app: 'ExpenseTracker', version: SCRIPT_VERSION });
   try {
     var d = JSON.parse(e.parameter.p);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     if (d.action === 'ping')               return ok({ status: 'ok', version: SCRIPT_VERSION });
     if (d.action === 'sheetUrl')           return ok({ url: ss.getUrl() });
     if (d.action === 'read')               return ok(readAll(ss));
@@ -125,6 +154,9 @@ function doGet(e) {
     if (d.action === 'readDebtPayments')   return ok(readDebtPayments(ss, d.debtId));
     if (d.action === 'appendDebtPayment')  return ok(appendDebtPayment(ss, d.payment));
     if (d.action === 'deleteDebtPayment')  return ok(deleteDebtPaymentRow(ss, d.id));
+    if (d.action === 'readIncome')         return ok(readIncome(ss));
+    if (d.action === 'appendIncome')       return ok(appendIncome(ss, d.entry));
+    if (d.action === 'deleteIncome')       return ok(deleteIncomeRow(ss, d.id));
     return ok({ error: 'Unknown action' });
   } catch(err) { return ok({ error: err.toString() }); }
 }
@@ -327,15 +359,60 @@ function findRowInSheet(ss, sheetName, id) {
 
 function ensureNamedSheet(ss, name, cols) {
   var sh = ss.getSheetByName(name);
-  if (sh) return sh;
-  sh = ss.insertSheet(name);
-  var rng = sh.getRange(1,1,1,cols.length);
-  rng.setValues([cols]).setFontWeight('bold')
-     .setBackground('#5b4fe9').setFontColor('#ffffff')
-     .setHorizontalAlignment('center');
-  sh.setFrozenRows(1);
-  sh.autoResizeColumns(1, cols.length);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+  }
+  // Always verify (and repair) the header row so column positions stay in sync
+  // with the cols definition used by append functions.
+  var existingHeaders = sh.getLastRow() > 0
+    ? sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0]
+    : [];
+  var headersMatch = cols.length === existingHeaders.length &&
+    cols.every(function(c,i){ return c === (existingHeaders[i]||'').toString().trim(); });
+  if (!headersMatch) {
+    sh.getRange(1,1,1,cols.length).setValues([cols]).setFontWeight('bold')
+       .setBackground('#5b4fe9').setFontColor('#ffffff')
+       .setHorizontalAlignment('center');
+    sh.setFrozenRows(1);
+    sh.autoResizeColumns(1, cols.length);
+  }
   return sh;
+}
+
+function readIncome(ss) {
+  var sh = ss.getSheetByName('Income');
+  if (!sh) return { income: [] };
+  var rows = sh.getDataRange().getValues();
+  if (rows.length < 2) return { income: [] };
+  var h = rows[0].map(function(c){ return c.toString().toLowerCase().trim(); });
+  var out = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i], id = (r[ci(h,'id')]||'').toString().trim();
+    if (!id) continue;
+    out.push({ id:id, type:(r[ci(h,'type')]||'income').toString().trim(),
+      source:(r[ci(h,'source')]||'').toString().trim(),
+      amount:(r[ci(h,'amount')]||'0').toString().trim(),
+      currency:(r[ci(h,'currency')]||'').toString().trim(),
+      date:toIso((r[ci(h,'date')]||'').toString().trim()),
+      notes:(r[ci(h,'notes')]||'').toString().trim(),
+      createdAt:(r[ci(h,'created at')]||'').toString().trim() });
+  }
+  return { income: out };
+}
+
+function appendIncome(ss, e) {
+  var sh = ensureNamedSheet(ss, 'Income', INCOME_COLS);
+  sh.appendRow([e.id||'', e.type||'income', e.source||'',
+    parseFloat(e.amount)||0, e.currency||'', e.date||'',
+    e.notes||'', e.createdAt||'']);
+  return { ok: true };
+}
+
+function deleteIncomeRow(ss, id) {
+  var loc = findRowInSheet(ss, 'Income', id);
+  if (!loc) return { error: 'Not found' };
+  loc.sh.deleteRow(loc.row);
+  return { ok: true };
 }`;
 
   return {
@@ -354,6 +431,9 @@ function ensureNamedSheet(ss, name, cols) {
     readDebtPayments,
     appendDebtPayment,
     deleteDebtPayment,
+    readAllIncome,
+    appendIncomeEntry,
+    deleteIncomeEntry,
     SCRIPT_SOURCE,
   };
 })();

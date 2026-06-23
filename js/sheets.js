@@ -562,6 +562,80 @@ const Sheets = (function () {
     return null;
   }
 
+  // ---- Income tab management ----
+
+  const INCOME_TAB = 'Income';
+
+  async function ensureIncomeTab(spreadsheetId) {
+    await _ensureTab(spreadsheetId, INCOME_TAB, CONFIG.INCOME_COLUMNS);
+  }
+
+  function _incomeToRow(e) {
+    return [
+      e.id        || '',
+      e.type      || 'income',
+      e.source    || '',
+      Number(e.amount) || 0,
+      e.currency  || '',
+      e.date      || '',
+      e.notes     || '',
+      e.createdAt || '',
+    ];
+  }
+
+  function _rowToIncome(header, row) {
+    const col = name => header.indexOf(name.toLowerCase());
+    return {
+      id:        (row[col('id')]         || '').toString().trim(),
+      type:      (row[col('type')]       || 'income').toString().trim(),
+      source:    (row[col('source')]     || '').toString().trim(),
+      amount:    (row[col('amount')]     || '0').toString().trim(),
+      currency:  (row[col('currency')]   || '').toString().trim(),
+      date:      _toIso((row[col('date')]|| '').toString().trim()),
+      notes:     (row[col('notes')]      || '').toString().trim(),
+      createdAt: (row[col('created at')] || '').toString().trim(),
+    };
+  }
+
+  async function readAllIncome(spreadsheetId) {
+    const data = await _req(
+      `${BASE}/${spreadsheetId}/values/${_range(INCOME_TAB)}?majorDimension=ROWS`
+    ).catch(() => ({ values: [] }));
+    const rows = data.values || [];
+    if (rows.length <= 1) return [];
+    const header = rows[0].map(h => h.trim().toLowerCase());
+    return rows.slice(1).map(row => _rowToIncome(header, row)).filter(e => e.id);
+  }
+
+  async function appendIncomeEntry(spreadsheetId, entry) {
+    await _req(
+      `${BASE}/${spreadsheetId}/values/${_range(INCOME_TAB)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          range: `'${INCOME_TAB}'`,
+          majorDimension: 'ROWS',
+          values: [_incomeToRow(entry)],
+        }),
+      }
+    );
+  }
+
+  async function deleteIncomeEntry(spreadsheetId, id) {
+    const loc = await _findRowInTab(spreadsheetId, INCOME_TAB, id);
+    if (!loc) throw new Error('Income entry not found in sheet');
+    await _req(`${BASE}/${spreadsheetId}:batchUpdate`, {
+      method: 'POST',
+      body: JSON.stringify({
+        requests: [{
+          deleteDimension: {
+            range: { sheetId: loc.tabSheetId, dimension: 'ROWS', startIndex: loc.rowIndex, endIndex: loc.rowIndex + 1 },
+          },
+        }],
+      }),
+    });
+  }
+
   return {
     findOrCreateSheet,
     readAllExpenses,
@@ -576,5 +650,9 @@ const Sheets = (function () {
     readDebtPayments,
     appendDebtPayment,
     deleteDebtPayment,
+    ensureIncomeTab,
+    readAllIncome,
+    appendIncomeEntry,
+    deleteIncomeEntry,
   };
 })();
