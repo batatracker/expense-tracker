@@ -16,6 +16,7 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
 - Optional: attach receipt photos or PDFs, stored in your Google Drive (OAuth modes only)
 - Works as an installable PWA (add to home screen)
 - **No Google account required** — use the Apps Script mode for a simpler setup
+- **Custom branding** — set your own app title and logo (emoji or image) from Settings; encoded in the bookmark URL, no server required
 
 ---
 
@@ -167,6 +168,19 @@ inkscape assets/icon.svg --export-png=assets/icon-512.png --export-width=512
 
 ---
 
+## Custom branding
+
+You can give the app a custom name and icon from **Settings → App Branding**. Both are encoded directly into the `?cfg=` bookmark URL — no server, no database.
+
+- **App Title** — replaces "Expense Tracker" in the page title, browser tab, and navigation bar.
+- **App Icon** — pick any emoji from the built-in picker, or upload a small image (PNG, JPG, SVG, etc.). The icon is used as the browser favicon and shown in the sidebar. Emoji are canvas-rendered to a PNG favicon automatically.
+
+Share or bookmark the URL after saving and the branding travels with it. Resetting to defaults removes both fields from the URL.
+
+> **Note on image size:** A base64-encoded image adds to the URL length. The app warns if the icon exceeds ~10 KB. Prefer emoji for sharing-friendly URLs.
+
+---
+
 ## Privacy & security
 
 - **OAuth modes:** The Client ID is not a secret — it only works from origins you register in Google Cloud Console. The access token is stored in `sessionStorage` (cleared when you close the tab).
@@ -181,6 +195,7 @@ inkscape assets/icon.svg --export-png=assets/icon-512.png --export-width=512
 
 - [Alpine.js](https://alpinejs.dev/) v3 — reactive UI, no build step
 - [Chart.js](https://www.chartjs.org/) v4 — dashboard charts
+- [emoji-picker-element](https://github.com/nolanlawson/emoji-picker-element) — full emoji picker for branding
 - [Google Identity Services](https://developers.google.com/identity/oauth2/web/guides/overview) — OAuth 2.0 (Options A & B)
 - [Google Sheets API v4](https://developers.google.com/sheets/api) — data storage (Options A & B)
 - [Google Drive API v3](https://developers.google.com/drive/api) — receipt storage (Option A)

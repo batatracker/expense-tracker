@@ -1,18 +1,14 @@
 // ============================================================
-// Expense Tracker — Configuration
+// Expense Tracker — App constants
 //
-// GOOGLE_CLIENT_ID: Leave empty here. The app will ask for it
-// on first run and store it in localStorage (never in source).
-// If you're self-hosting and want to hard-code it, set it below.
-//
-// DEFAULT_CURRENCY: Leave empty for currency-agnostic operation.
-// Users set their preferred currency in the Settings screen.
+// Nothing here needs to be changed for a normal deployment.
+// User-specific config (OAuth client ID, sheet ID, currency,
+// branding) is handled entirely through the in-app Setup screen
+// and stored in the bookmarked ?cfg= URL — not here.
 // ============================================================
 
 const CONFIG = {
-  GOOGLE_CLIENT_ID: '',   // set via in-app setup screen or hard-code here
   APP_VERSION: '1.2.0',
-  REPO_URL: 'https://github.com/YOUR_USERNAME/expense-tracker',
 
   // Base path for the app deployment (used by i18n locale routing).
   // '/' for root deploys (Netlify, custom domain, localhost).

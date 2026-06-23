@@ -274,8 +274,7 @@ function appData() {
       }
 
       // Guard: require a Client ID before doing anything else.
-      // Checked from localStorage (set via setup screen) OR from config.js.
-      const clientId = localStorage.getItem('et_client_id') || CONFIG.GOOGLE_CLIENT_ID;
+      const clientId = localStorage.getItem('et_client_id');
       if (!clientId) {
         this.isSetupNeeded = true;
         this.isInitializing = false;
@@ -1305,8 +1304,5 @@ function appData() {
       return CONFIG.APP_VERSION;
     },
 
-    get repoUrl() {
-      return CONFIG.REPO_URL;
-    },
   };
 }

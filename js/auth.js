@@ -24,9 +24,7 @@ const Auth = (function () {
   }
 
   function _initClient(done) {
-    // Prefer the client ID stored by the user via the setup screen;
-    // fall back to the value hard-coded in config.js (if any).
-    const clientId = localStorage.getItem('et_client_id') || CONFIG.GOOGLE_CLIENT_ID;
+    const clientId = localStorage.getItem('et_client_id');
 
     // Include drive.file scope only when receipt upload is enabled.
     let scope = CONFIG.SCOPES_BASE;
