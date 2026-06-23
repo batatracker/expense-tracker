@@ -1,8 +1,4 @@
-## Purpose
-
-Provides the expense entry and editing form. Handles field validation, category selection, currency defaults, and submission of new and updated expenses to the Google Sheet.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: User can add a new expense
 The system SHALL provide an expense entry form accessible from the bottom navigation bar and from a prominent FAB (floating action button) on the expense list and dashboard views.
@@ -23,28 +19,6 @@ The system SHALL provide an expense entry form accessible from the bottom naviga
 - **WHEN** the user enters a non-numeric or negative value in the Amount field
 - **THEN** the app SHALL show an inline error translated to the active locale
 
-### Requirement: User can edit an existing expense
-The system SHALL allow editing any field of an existing expense from the expense detail view.
-
-#### Scenario: Open edit form
-- **WHEN** the user taps "Edit" on an expense detail view
-- **THEN** the app SHALL display the expense entry form pre-populated with the existing expense values
-
-#### Scenario: Save edited expense
-- **WHEN** the user modifies fields and taps "Save"
-- **THEN** the app SHALL update the corresponding row in the Google Sheet, update the in-memory cache, and show a success toast ("Expense updated")
-
-### Requirement: Expense categories are predefined with an "Other" option
-The system SHALL provide a fixed list of expense categories and an "Other / Custom" option.
-
-#### Scenario: Category dropdown contents
-- **WHEN** the user opens the Category dropdown
-- **THEN** they SHALL see at minimum: Food & Dining, Transportation, Shopping, Entertainment, Health & Fitness, Housing & Utilities, Travel, Education, Personal Care, Business, Other
-
-#### Scenario: "Other" category
-- **WHEN** the user selects "Other"
-- **THEN** a text field SHALL appear allowing them to type a custom category name, which is saved as the Category value
-
 ### Requirement: Category selection stores English key to sheet
 The system SHALL always write the English category key to the Google Sheet `Category` column, regardless of the active locale. The category dropdown SHALL display translated labels while binding the English key as the submitted value.
 
@@ -55,14 +29,3 @@ The system SHALL always write the English category key to the Google Sheet `Cate
 #### Scenario: Translated label does not affect sheet value
 - **WHEN** the user saves an expense after selecting a category in `es-AR` mode
 - **THEN** the `Category` column in Google Sheets SHALL contain the English key (e.g., `Food & Dining`)
-
-### Requirement: Currency defaults to user-configured preference
-The system SHALL use a configurable default currency code for new expenses.
-
-#### Scenario: Default currency applied
-- **WHEN** the user opens the add expense form
-- **THEN** the Currency field SHALL be pre-filled with the default currency from Settings (default: USD)
-
-#### Scenario: Override currency per expense
-- **WHEN** the user changes the Currency field on the form
-- **THEN** the expense SHALL be saved with the specified currency code, not the default

@@ -11,8 +11,13 @@
 
 const CONFIG = {
   GOOGLE_CLIENT_ID: '',   // set via in-app setup screen or hard-code here
-  APP_VERSION: '1.0.0',
+  APP_VERSION: '1.1.0',
   REPO_URL: 'https://github.com/YOUR_USERNAME/expense-tracker',
+
+  // Base path for the app deployment (used by i18n locale routing).
+  // '/' for root deploys (Netlify, custom domain, localhost).
+  // '/repo-name/' for GitHub Pages project-site deploys.
+  BASE_PATH: '/',
 
   DEFAULT_CURRENCY: '',   // no assumption; configured per-user in Settings
 

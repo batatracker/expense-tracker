@@ -111,6 +111,7 @@
      SCRIPTS — loaded before Alpine so appData() is defined
      ================================================================ -->
 <script src="config.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/sheets.js"></script>
 <script src="js/drive.js"></script>
@@ -125,7 +126,7 @@
   <!-- Loading screen -->
   <div class="loading-screen" x-show="isInitializing" style="position:fixed;inset:0;z-index:9999">
     <div class="spinner"></div>
-    <p class="text-sm text-muted">Loading…</p>
+    <p class="text-sm text-muted" x-text="t('app.loading')"></p>
   </div>
 
   <!-- ============================================================
@@ -143,18 +144,18 @@
         <rect x="17" y="23" width="7" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.3"/>
       </svg>
     </div>
-    <h1 class="signin-title">One-time Setup</h1>
+    <h1 class="signin-title" x-text="t('setup.title')"></h1>
 
     <!-- ── Step 1: mode selection ── -->
     <div x-show="!setupMode" style="width:100%;max-width:380px">
-      <p class="signin-subtitle" style="margin-bottom:var(--sp-5)">How do you want to store your expenses?</p>
+      <p class="signin-subtitle" style="margin-bottom:var(--sp-5)" x-text="t('setup.how_to_store')"></p>
 
       <button class="setup-mode-card" @click="setupMode='fresh'; setupStep=1">
         <div class="setup-mode-icon" style="background:var(--clr-primary-light);color:var(--clr-primary)">
           <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         </div>
         <div class="setup-mode-body">
-          <div class="setup-mode-title">Create a new sheet for me</div>
+          <div class="setup-mode-title" x-text="t('setup.fresh.title')"></div>
           <div class="setup-mode-desc">The app creates an <em>ExpenseTracker</em> spreadsheet in your Google Drive automatically. Receipt upload also available.</div>
         </div>
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chevron-right"/></svg>
@@ -165,7 +166,7 @@
           <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         </div>
         <div class="setup-mode-body">
-          <div class="setup-mode-title">Connect an existing sheet</div>
+          <div class="setup-mode-title" x-text="t('setup.existing.title')"></div>
           <div class="setup-mode-desc">Paste a link to a Google Sheet you already have. Receipt upload is not available in this mode.</div>
         </div>
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chevron-right"/></svg>
@@ -176,7 +177,7 @@
           <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
         <div class="setup-mode-body">
-          <div class="setup-mode-title">Use without signing in <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;background:#DCFCE7;color:#15803D;border-radius:99px;letter-spacing:.03em;vertical-align:middle;margin-left:4px">NO OAUTH</span></div>
+          <div class="setup-mode-title"><span x-text="t('setup.appscript.title')"></span> <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;background:#DCFCE7;color:#15803D;border-radius:99px;letter-spacing:.03em;vertical-align:middle;margin-left:4px">NO OAUTH</span></div>
           <div class="setup-mode-desc">No Google Cloud Console, no OAuth permissions. Paste a small script into your sheet once. Guided 4-step setup.</div>
         </div>
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chevron-right"/></svg>
@@ -190,8 +191,7 @@
 
     <!-- ── Step 2: credential form ── -->
     <div x-show="setupMode" class="signin-card" style="max-width:380px">
-      <button class="btn btn-ghost" style="margin-bottom:var(--sp-4);padding:0;font-size:13px;color:var(--clr-text-2)" @click="setupMode=null; setupErrors={}; setupStep=1">
-        ← Change setup method
+      <button class="btn btn-ghost" style="margin-bottom:var(--sp-4);padding:0;font-size:13px;color:var(--clr-text-2)" @click="setupMode=null; setupErrors={}; setupStep=1" x-text="t('setup.back')">
       </button>
 
       <!-- ══ OAuth wizard (fresh + existing — 3 steps) ══ -->
@@ -199,8 +199,7 @@
 
         <!-- Step 1: Cloud project -->
         <div x-show="setupStep === 1">
-          <div style="font-size:13px;font-weight:700;color:var(--clr-text);margin-bottom:var(--sp-2)">
-            Step 1 of 3 — Google Cloud project
+          <div style="font-size:13px;font-weight:700;color:var(--clr-text);margin-bottom:var(--sp-2)" x-text="t('setup.step_cloud')">
           </div>
           <p style="font-size:13px;color:var(--clr-text-2);line-height:1.55;margin-bottom:var(--sp-3)">
             You need a free Google Cloud project to issue OAuth credentials. One-time setup.
@@ -212,14 +211,13 @@
             <li x-show="setupMode === 'fresh'">Also enable <strong>Google Drive API</strong> (needed for receipt photos)</li>
           </ol>
           <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-5)">
-            <button class="btn btn-primary" @click="setupStep=2">Next →</button>
+            <button class="btn btn-primary" @click="setupStep=2" x-text="t('setup.next')"></button>
           </div>
         </div>
 
         <!-- Step 2: OAuth credentials -->
         <div x-show="setupStep === 2">
-          <div style="font-size:13px;font-weight:700;color:var(--clr-text);margin-bottom:var(--sp-2)">
-            Step 2 of 3 — OAuth credentials
+          <div style="font-size:13px;font-weight:700;color:var(--clr-text);margin-bottom:var(--sp-2)" x-text="t('setup.step_oauth')">
           </div>
           <ol style="padding-left:var(--sp-5);font-size:13px;color:var(--clr-text-2);line-height:1.75;margin-bottom:var(--sp-4)">
             <li>In Cloud Console → <strong>APIs &amp; Services → Credentials</strong></li>
@@ -232,15 +230,14 @@
             <li>Click <strong>Create</strong> and copy the <strong>Client ID</strong></li>
           </ol>
           <div style="display:flex;gap:var(--sp-3);justify-content:space-between">
-            <button class="btn btn-ghost" @click="setupStep=1">← Back</button>
-            <button class="btn btn-primary" @click="setupStep=3">Next →</button>
+            <button class="btn btn-ghost" @click="setupStep=1" x-text="t('setup.back_btn')"></button>
+            <button class="btn btn-primary" @click="setupStep=3" x-text="t('setup.next')"></button>
           </div>
         </div>
 
         <!-- Step 3: Connect -->
         <div x-show="setupStep === 3">
-          <div style="font-size:13px;font-weight:700;color:var(--clr-text);margin-bottom:var(--sp-3)">
-            Step 3 of 3 — Connect
+          <div style="font-size:13px;font-weight:700;color:var(--clr-text);margin-bottom:var(--sp-3)" x-text="t('setup.step_connect')">
           </div>
 
           <div style="margin-bottom:var(--sp-4)">
@@ -280,9 +277,9 @@
           </div>
 
           <div style="display:flex;gap:var(--sp-3);justify-content:space-between">
-            <button class="btn btn-ghost" @click="setupStep=2; setupErrors={}">← Back</button>
+            <button class="btn btn-ghost" @click="setupStep=2; setupErrors={}" x-text="t('setup.back_btn')"></button>
             <button class="btn btn-primary" @click="saveSetup()">
-              <span x-text="setupMode === 'existing' ? 'Connect' : 'Save &amp; Continue'"></span>
+              <span x-text="setupMode === 'existing' ? t('setup.connect') : t('setup.save_continue')"></span>
             </button>
           </div>
           <p style="margin-top:var(--sp-3);font-size:12px;color:var(--clr-text-3);text-align:center;line-height:1.5">
@@ -308,7 +305,7 @@
             <p style="font-size:12px;color:var(--clr-text-3);line-height:1.5">Once created, come back here.</p>
           </div>
           <div style="display:flex;justify-content:flex-end">
-            <button class="btn btn-primary" @click="setupStep=2">Next →</button>
+            <button class="btn btn-primary" @click="setupStep=2" x-text="t('setup.next')"></button>
           </div>
         </div>
 
@@ -323,8 +320,8 @@
             <p style="font-size:12px;color:var(--clr-text-3);line-height:1.5">Click the 💾 Save icon in Apps Script to save.</p>
           </div>
           <div style="display:flex;gap:var(--sp-3);justify-content:space-between">
-            <button class="btn btn-ghost" @click="setupStep=1">← Back</button>
-            <button class="btn btn-primary" @click="setupStep=3">Next →</button>
+            <button class="btn btn-ghost" @click="setupStep=1" x-text="t('setup.back_btn')"></button>
+            <button class="btn btn-primary" @click="setupStep=3" x-text="t('setup.next')"></button>
           </div>
         </div>
 
@@ -342,8 +339,8 @@
             </ol>
           </div>
           <div style="display:flex;gap:var(--sp-3);justify-content:space-between">
-            <button class="btn btn-ghost" @click="setupStep=2">← Back</button>
-            <button class="btn btn-primary" @click="setupStep=4">Next →</button>
+            <button class="btn btn-ghost" @click="setupStep=2" x-text="t('setup.back_btn')"></button>
+            <button class="btn btn-primary" @click="setupStep=4" x-text="t('setup.next')"></button>
           </div>
         </div>
 
@@ -368,10 +365,10 @@
                    @input="setupForm.defaultCurrency = setupForm.defaultCurrency.toUpperCase()">
           </div>
           <div style="display:flex;gap:var(--sp-3);justify-content:space-between">
-            <button class="btn btn-ghost" @click="setupStep=3">← Back</button>
+            <button class="btn btn-ghost" @click="setupStep=3" x-text="t('setup.back_btn')"></button>
             <button class="btn btn-primary" @click="verifyScript()" :disabled="setupVerifying">
-              <span x-show="!setupVerifying">Verify &amp; Save</span>
-              <span x-show="setupVerifying">Verifying…</span>
+              <span x-show="!setupVerifying" x-text="t('setup.verify_save')"></span>
+              <span x-show="setupVerifying" x-text="t('setup.verifying')"></span>
             </button>
           </div>
         </div>
@@ -394,27 +391,27 @@
         <rect x="17" y="23" width="7" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.3"/>
       </svg>
     </div>
-    <h1 class="signin-title">Expense Tracker</h1>
-    <p class="signin-subtitle">Your expenses. Your data. Stored in your own Google Sheet.</p>
+    <h1 class="signin-title" x-text="t('signin.title')"></h1>
+    <p class="signin-subtitle" x-text="t('signin.subtitle')"></p>
 
     <div class="signin-card">
       <button class="btn-google" @click="signIn()">
         <svg width="18" height="18"><use href="#icon-google"/></svg>
-        Sign in with Google
+        <span x-text="t('signin.button')"></span>
       </button>
-      <div class="divider">What you get</div>
+      <div class="divider" x-text="t('signin.what_you_get')"></div>
       <ul class="signin-features">
         <li>
           <svg width="14" height="14"><use href="#icon-check"/></svg>
-          Full expense history in a Google Sheet you own
+          <span x-text="t('signin.feature_history')"></span>
         </li>
         <li x-show="receiptUploadEnabled">
           <svg width="14" height="14"><use href="#icon-check"/></svg>
-          Receipt photos stored in your Google Drive
+          <span x-text="t('signin.feature_receipts')"></span>
         </li>
         <li>
           <svg width="14" height="14"><use href="#icon-check"/></svg>
-          No subscription. No server. Free forever.
+          <span x-text="t('signin.feature_free')"></span>
         </li>
       </ul>
     </div>
@@ -435,20 +432,20 @@
           <rect x="17" y="20" width="11" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.4"/>
           <rect x="17" y="23" width="7" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.3"/>
         </svg>
-        <span class="sidebar-brand-name">Expenses</span>
+        <span class="sidebar-brand-name" x-text="t('nav.expenses')"></span>
       </div>
       <button class="sidebar-add-btn" @click="navigate('add')">
         <svg width="15" height="15"><use href="#icon-plus"/></svg>
-        Add Expense
+        <span x-text="t('nav.add_expense')"></span>
       </button>
       <div class="sidebar-nav-items">
         <button class="sidebar-nav-item" :class="{active: currentView === 'dashboard'}" @click="navigate('dashboard')">
           <svg width="18" height="18"><use href="#icon-dashboard"/></svg>
-          <span>Dashboard</span>
+          <span x-text="t('nav.dashboard')"></span>
         </button>
         <button class="sidebar-nav-item" :class="{active: currentView === 'expenses'}" @click="navigate('expenses')">
           <svg width="18" height="18"><use href="#icon-list"/></svg>
-          <span>Expenses</span>
+          <span x-text="t('nav.expenses')"></span>
         </button>
       </div>
       <div style="flex:1"></div>
@@ -462,11 +459,11 @@
           <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
-        <span x-text="darkMode ? 'Light mode' : 'Dark mode'"></span>
+        <span x-text="darkMode ? t('settings.light_mode') : t('settings.dark_mode')"></span>
       </button>
       <button class="sidebar-nav-item" :class="{active: currentView === 'settings'}" @click="navigate('settings')">
         <svg width="18" height="18"><use href="#icon-settings"/></svg>
-        <span>Settings</span>
+        <span x-text="t('nav.settings')"></span>
       </button>
     </nav>
 
@@ -495,7 +492,7 @@
       <!-- -------- DASHBOARD -------- -->
       <div x-show="currentView === 'dashboard'">
         <div class="view-header">
-          <h1>Dashboard</h1>
+          <h1 x-text="t('dashboard.title')"></h1>
           <button class="back-btn" @click="refreshExpenses()" title="Refresh" aria-label="Refresh expenses">
             <svg width="18" height="18"><use href="#icon-refresh"/></svg>
           </button>
@@ -505,11 +502,11 @@
           <!-- Period tabs -->
           <div class="period-tabs" role="tablist">
             <template x-for="p in [
-              {id:'this-month',label:'This Month'},
-              {id:'last-month',label:'Last Month'},
-              {id:'last-3-months',label:'3 Months'},
-              {id:'this-year',label:'This Year'},
-              {id:'all-time',label:'All Time'}
+              {id:'this-month',label:t('period.this_month')},
+              {id:'last-month',label:t('period.last_month')},
+              {id:'last-3-months',label:t('period.last_3_months')},
+              {id:'this-year',label:t('period.this_year')},
+              {id:'all-time',label:t('period.all_time')}
             ]" :key="p.id">
               <button class="period-tab" :class="{active: dashPeriod === p.id}"
                       @click="dashPeriod = p.id" role="tab" :aria-selected="dashPeriod === p.id"
@@ -519,7 +516,7 @@
 
           <!-- Summary card — handles single or multiple currencies -->
           <div class="summary-card">
-            <div class="summary-label">Total Spent</div>
+            <div class="summary-label" x-text="t('dashboard.total_spent')"></div>
             <!-- No expenses in period -->
             <template x-if="dashboardSummary.currencyTotals.length === 0">
               <div class="summary-amount" x-text="defaultCurrency ? formatCurrency(0, defaultCurrency) : '0.00'"></div>
@@ -537,9 +534,8 @@
                   <div class="summary-amount" style="font-size:22px;line-height:1.3"
                        x-text="formatCurrency(entry.total, entry.currency)"></div>
                 </template>
-                <div style="font-size:11px;opacity:0.6;margin-top:4px">across
-                  <span x-text="dashboardSummary.currencyTotals.length"></span> currencies
-                </div>
+                <div style="font-size:11px;opacity:0.6;margin-top:4px"
+                     x-text="t('dashboard.across_currencies').replace('{n}', dashboardSummary.currencyTotals.length)"></div>
               </div>
             </template>
           </div>
@@ -557,7 +553,7 @@
               <div class="dash-charts-grid">
                 <!-- Category breakdown -->
                 <div class="chart-card">
-                  <div class="chart-title">Spending by Category</div>
+                  <div class="chart-title" x-text="t('dashboard.spending_by_category')"></div>
                   <div class="chart-wrap">
                     <canvas id="category-chart"></canvas>
                   </div>
@@ -565,7 +561,7 @@
 
                 <!-- Monthly trend -->
                 <div class="chart-card">
-                  <div class="chart-title">6-Month Trend</div>
+                  <div class="chart-title" x-text="t('dashboard.trend')"></div>
                   <div class="chart-wrap">
                     <canvas id="trend-chart"></canvas>
                   </div>
@@ -575,10 +571,10 @@
               <!-- Recent expenses -->
               <div class="chart-card">
                 <div class="flex items-center justify-between" style="margin-bottom:var(--sp-4)">
-                  <div class="chart-title" style="margin-bottom:0">Recent Expenses</div>
+                  <div class="chart-title" style="margin-bottom:0" x-text="t('dashboard.recent_expenses')"></div>
                 </div>
                 <template x-if="dashboardSummary.recent.length === 0">
-                  <p class="text-sm text-muted" style="text-align:center;padding:var(--sp-4) 0">No expenses yet</p>
+                  <p class="text-sm text-muted" style="text-align:center;padding:var(--sp-4) 0" x-text="t('dashboard.no_expenses')"></p>
                 </template>
                 <div class="recent-list">
                   <template x-for="e in dashboardSummary.recent" :key="e.id">
@@ -587,7 +583,7 @@
                         <span x-text="getCategoryIcon(e.category)"></span>
                       </div>
                       <div class="recent-label">
-                        <div class="recent-merchant truncate" x-text="e.merchant || e.category"></div>
+                        <div class="recent-merchant truncate" x-text="e.merchant || t(e.category)"></div>
                         <div class="recent-date" x-text="formatDateShort(e.date)"></div>
                       </div>
                       <div class="recent-amount" x-text="formatCurrency(e.amount, e.currency)"></div>
@@ -595,7 +591,7 @@
                   </template>
                 </div>
                 <div class="view-all-link" @click="navigate('expenses')" style="cursor:pointer">
-                  View all expenses
+                  <span x-text="t('dashboard.view_all')"></span>
                   <svg width="14" height="14"><use href="#icon-chevron-right"/></svg>
                 </div>
               </div>
@@ -607,7 +603,7 @@
       <!-- -------- EXPENSES LIST -------- -->
       <div x-show="currentView === 'expenses'">
         <div class="view-header">
-          <h1>Expenses</h1>
+          <h1 x-text="t('expenses.title')"></h1>
           <button class="back-btn" @click="refreshExpenses()" aria-label="Refresh">
             <svg width="18" height="18"><use href="#icon-refresh"/></svg>
           </button>
@@ -617,8 +613,8 @@
         <div class="search-bar">
           <div class="search-input-wrap">
             <svg width="16" height="16"><use href="#icon-search"/></svg>
-            <input type="search" class="search-input" placeholder="Search expenses…"
-                   x-model="search" @input="search = $event.target.value" aria-label="Search expenses">
+            <input type="search" class="search-input" :placeholder="t('expenses.search_placeholder')"
+                   x-model="search" @input="search = $event.target.value" :aria-label="t('expenses.search_placeholder')">
           </div>
           <button class="filter-btn" :class="{active: showFilters || hasActiveFilters}"
                   @click="showFilters = !showFilters" aria-label="Toggle filters">
@@ -629,38 +625,38 @@
 
         <!-- Filter panel -->
         <div class="filter-panel" x-show="showFilters" x-collapse>
-          <div class="filter-section-title">Category</div>
+          <div class="filter-section-title" x-text="t('expenses.filter.category')"></div>
           <div class="category-chip-grid">
             <template x-for="cat in categories" :key="cat">
               <button class="category-chip"
                       :class="{selected: filterCategories.includes(cat)}"
                       @click="toggleCategoryFilter(cat)"
-                      x-text="cat"></button>
+                      x-text="t(cat)"></button>
             </template>
           </div>
           <div class="date-range-row mt-4">
             <label>
-              <span>From</span>
+              <span x-text="t('expenses.filter.from')"></span>
               <input type="date" x-model="filterStart">
             </label>
             <label>
-              <span>To</span>
+              <span x-text="t('expenses.filter.to')"></span>
               <input type="date" x-model="filterEnd">
             </label>
           </div>
           <div style="margin-top:var(--sp-3);display:flex;justify-content:flex-end">
-            <button class="btn btn-sm btn-ghost" @click="clearFilters()">Clear filters</button>
+            <button class="btn btn-sm btn-ghost" @click="clearFilters()" x-text="t('expenses.filter.clear')"></button>
           </div>
         </div>
 
         <!-- Sort bar -->
         <div class="sort-bar">
-          <span class="text-xs text-muted" x-text="`${filteredExpenses.length} expense${filteredExpenses.length !== 1 ? 's' : ''}`"></span>
-          <select class="sort-select" x-model="sortBy" aria-label="Sort order">
-            <option value="date-desc">Newest first</option>
-            <option value="date-asc">Oldest first</option>
-            <option value="amount-desc">Highest amount</option>
-            <option value="amount-asc">Lowest amount</option>
+          <span class="text-xs text-muted" x-text="filteredExpenses.length + ' ' + (filteredExpenses.length === 1 ? t('expenses.count.singular') : t('expenses.count.plural'))"></span>
+          <select class="sort-select" x-model="sortBy" :aria-label="t('expenses.title')">
+            <option value="date-desc" x-text="t('expenses.sort.date_desc')"></option>
+            <option value="date-asc" x-text="t('expenses.sort.date_asc')"></option>
+            <option value="amount-desc" x-text="t('expenses.sort.amount_desc')"></option>
+            <option value="amount-asc" x-text="t('expenses.sort.amount_asc')"></option>
           </select>
         </div>
 
@@ -684,16 +680,16 @@
         <template x-if="!isLoading && filteredExpenses.length === 0 && !search && !hasActiveFilters">
           <div class="empty-state">
             <div class="empty-icon">💸</div>
-            <h3>No expenses yet</h3>
-            <p>Tap the + button to add your first expense.</p>
+            <h3 x-text="t('expenses.empty.title')"></h3>
+            <p x-text="t('expenses.empty.desc')"></p>
           </div>
         </template>
         <template x-if="!isLoading && filteredExpenses.length === 0 && (search || hasActiveFilters)">
           <div class="empty-state">
             <div class="empty-icon">🔍</div>
-            <h3>No results</h3>
-            <p>No expenses match your search or filters.</p>
-            <button class="btn btn-secondary btn-sm" @click="clearFilters(); search=''">Clear search &amp; filters</button>
+            <h3 x-text="t('expenses.no_results.title')"></h3>
+            <p x-text="t('expenses.no_results.desc')"></p>
+            <button class="btn btn-secondary btn-sm" @click="clearFilters(); search=''" x-text="t('expenses.clear_search')"></button>
           </div>
         </template>
 
@@ -713,7 +709,7 @@
                   <span style="width:3px;height:3px;border-radius:50%;background:var(--clr-text-3);display:inline-block"></span>
                   <span class="category-badge"
                         :style="`background-color:${getCategoryColor(expense.category)}18;color:${getCategoryColor(expense.category)}`"
-                        x-text="expense.category"></span>
+                        x-text="t(expense.category)"></span>
                 </div>
               </div>
               <div class="expense-amount" x-text="formatCurrency(expense.amount, expense.currency)"></div>
@@ -728,10 +724,10 @@
           <button class="back-btn" @click="cancelForm()" aria-label="Go back">
             <svg width="20" height="20"><use href="#icon-back"/></svg>
           </button>
-          <h1 x-text="isEditing ? 'Edit Expense' : 'Add Expense'"></h1>
+          <h1 x-text="isEditing ? t('form.edit_title') : t('form.add_title')"></h1>
           <button class="btn btn-primary btn-sm" @click="saveExpense()" :disabled="isSaving">
-            <span x-show="!isSaving">Save</span>
-            <span x-show="isSaving">Saving…</span>
+            <span x-show="!isSaving" x-text="t('form.save')"></span>
+            <span x-show="isSaving" x-text="t('form.saving')"></span>
           </button>
         </div>
 
@@ -739,7 +735,7 @@
           <!-- Amount + Currency row -->
           <div class="form-row">
             <div class="form-group flex-1">
-              <label class="form-label" for="amount">Amount <span class="text-danger">*</span></label>
+              <label class="form-label" for="amount"><span x-text="t('form.amount')"></span> <span class="text-danger">*</span></label>
               <div class="amount-input-group" :class="{error: formErrors.amount}">
                 <span class="amount-currency-badge" x-text="form.currency || defaultCurrency || '¤'"></span>
                 <input id="amount" type="number" class="amount-number-input"
@@ -750,7 +746,7 @@
               <div class="form-error" x-show="formErrors.amount" x-text="formErrors.amount"></div>
             </div>
             <div class="form-group" style="width:80px">
-              <label class="form-label" for="currency">Currency</label>
+              <label class="form-label" for="currency" x-text="t('form.currency')"></label>
               <input id="currency" type="text" class="form-input" x-model="form.currency"
                      @input="formDirty=true" maxlength="3"
                      style="text-transform:uppercase;text-align:center" placeholder="USD">
@@ -759,20 +755,20 @@
 
           <!-- Date -->
           <div class="form-group">
-            <label class="form-label" for="date">Date</label>
+            <label class="form-label" for="date" x-text="t('form.date')"></label>
             <input id="date" type="date" class="form-input" x-model="form.date" @change="formDirty=true">
           </div>
 
           <!-- Category -->
           <div class="form-group">
-            <label class="form-label" for="category">Category <span class="text-danger">*</span></label>
+            <label class="form-label" for="category"><span x-text="t('form.category')"></span> <span class="text-danger">*</span></label>
             <div class="select-wrap">
               <select id="category" class="form-select" :class="{error: formErrors.category}"
                       x-model="form.category" @change="formDirty=true"
                       aria-required="true" :aria-invalid="!!formErrors.category">
-                <option value="" disabled>Select a category…</option>
+                <option value="" disabled x-text="t('form.category.placeholder')"></option>
                 <template x-for="cat in categories" :key="cat">
-                  <option :value="cat" x-text="cat"></option>
+                  <option :value="cat" x-text="t(cat)"></option>
                 </template>
               </select>
               <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
@@ -782,31 +778,31 @@
 
           <!-- Custom category (when "Other" is selected) -->
           <div class="form-group" x-show="form.category === 'Other'">
-            <label class="form-label" for="customCategory">Custom Category</label>
+            <label class="form-label" for="customCategory" x-text="t('form.custom_category')"></label>
             <input id="customCategory" type="text" class="form-input"
                    :class="{error: formErrors.customCategory}"
                    x-model="form.customCategory" @input="formDirty=true"
-                   placeholder="e.g. Gym, Coffee, Hobbies">
+                   :placeholder="t('form.custom_category.placeholder')">
             <div class="form-error" x-show="formErrors.customCategory" x-text="formErrors.customCategory"></div>
           </div>
 
           <!-- Merchant -->
           <div class="form-group">
-            <label class="form-label" for="merchant">Merchant / Store</label>
+            <label class="form-label" for="merchant" x-text="t('form.merchant')"></label>
             <input id="merchant" type="text" class="form-input" x-model="form.merchant"
-                   @input="formDirty=true" placeholder="e.g. Amazon, Starbucks">
+                   @input="formDirty=true" :placeholder="t('form.merchant.placeholder')">
           </div>
 
           <!-- Notes -->
           <div class="form-group">
-            <label class="form-label" for="notes">Notes</label>
+            <label class="form-label" for="notes" x-text="t('form.notes')"></label>
             <textarea id="notes" class="form-textarea" x-model="form.notes"
-                      @input="formDirty=true" placeholder="Any extra details…" rows="3"></textarea>
+                      @input="formDirty=true" :placeholder="t('form.notes.placeholder')" rows="3"></textarea>
           </div>
 
           <!-- Receipt (only shown when receipt upload is enabled) -->
           <div class="form-group" x-show="receiptUploadEnabled">
-            <div class="form-label">Receipt</div>
+            <div class="form-label" x-text="t('form.receipt')"></div>
             <div class="receipt-section">
               <!-- Preview (existing or newly selected) -->
               <template x-if="receiptPreviewUrl || receiptFileName || existingReceiptUrl">
@@ -831,20 +827,20 @@
                   <button type="button" class="btn-receipt"
                           @click="document.getElementById('camera-input').click()">
                     <svg width="16" height="16"><use href="#icon-camera"/></svg>
-                    Take Photo
+                    <span x-text="t('form.take_photo')"></span>
                   </button>
                   <button type="button" class="btn-receipt"
                           @click="document.getElementById('file-input').click()">
                     <svg width="16" height="16"><use href="#icon-upload"/></svg>
-                    Upload File
+                    <span x-text="t('form.upload_file')"></span>
                   </button>
                 </div>
               </template>
               <template x-if="receiptFile || existingReceiptUrl">
                 <div style="margin-top:var(--sp-2)">
                   <button type="button" class="btn btn-sm btn-ghost"
-                          @click="document.getElementById('file-input').click()" style="font-size:12px">
-                    Replace file
+                          @click="document.getElementById('file-input').click()" style="font-size:12px"
+                          x-text="t('form.replace_file')">
                   </button>
                 </div>
               </template>
@@ -853,10 +849,10 @@
 
           <!-- Save / Cancel -->
           <div class="btn-row" style="padding:0;margin-top:var(--sp-4)">
-            <button class="btn btn-secondary" @click="cancelForm()">Cancel</button>
+            <button class="btn btn-secondary" @click="cancelForm()" x-text="t('form.cancel')"></button>
             <button class="btn btn-primary flex-1" @click="saveExpense()" :disabled="isSaving">
-              <span x-show="!isSaving" x-text="isEditing ? 'Update' : 'Save Expense'"></span>
-              <span x-show="isSaving">Saving…</span>
+              <span x-show="!isSaving" x-text="isEditing ? t('form.update') : t('form.save_expense')"></span>
+              <span x-show="isSaving" x-text="t('form.saving')"></span>
             </button>
           </div>
         </div>
@@ -865,7 +861,7 @@
       <!-- -------- SETTINGS -------- -->
       <div x-show="currentView === 'settings'">
         <div class="view-header">
-          <h1>Settings</h1>
+          <h1 x-text="t('settings.title')"></h1>
         </div>
 
         <div class="settings-page">
@@ -887,7 +883,7 @@
 
           <!-- Preferences -->
           <div class="settings-section">
-            <div class="settings-section-title">Preferences</div>
+            <div class="settings-section-title" x-text="t('settings.preferences')"></div>
             <div class="settings-card">
               <div class="settings-row" @click="toggleDarkMode()" role="button" tabindex="0" @keydown.enter="toggleDarkMode()" @keydown.space.prevent="toggleDarkMode()">
                 <div class="settings-row-icon" :style="darkMode ? 'background:#1E2233;color:#A5B4FC' : 'background:#EEF2FF;color:#5B4FE9'">
@@ -902,8 +898,8 @@
                   </svg>
                 </div>
                 <div class="settings-row-text">
-                  <div class="settings-row-title" x-text="darkMode ? 'Dark mode' : 'Light mode'"></div>
-                  <div class="settings-row-desc">Toggle dark / light appearance</div>
+                  <div class="settings-row-title" x-text="darkMode ? t('settings.dark_mode') : t('settings.light_mode')"></div>
+                  <div class="settings-row-desc" x-text="t('settings.dark_mode.desc')"></div>
                 </div>
                 <label style="display:flex;align-items:center;cursor:pointer" @click.stop>
                   <input type="checkbox" :checked="darkMode" @change="toggleDarkMode()"
@@ -915,8 +911,8 @@
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
                 </div>
                 <div class="settings-row-text">
-                  <div class="settings-row-title">Default Currency</div>
-                  <div class="settings-row-desc">Pre-fills currency on new expenses (optional)</div>
+                  <div class="settings-row-title" x-text="t('settings.currency')"></div>
+                  <div class="settings-row-desc" x-text="t('settings.currency.desc')"></div>
                 </div>
                 <div style="display:flex;align-items:center;gap:var(--sp-2)">
                   <input type="text" class="form-input" x-model="defaultCurrency"
@@ -929,8 +925,8 @@
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M3 8h2m3 0h2m3 0h2"/></svg>
                 </div>
                 <div class="settings-row-text">
-                  <div class="settings-row-title">Receipt Upload</div>
-                  <div class="settings-row-desc">Store photos &amp; PDFs in Google Drive</div>
+                  <div class="settings-row-title" x-text="t('settings.receipt_upload')"></div>
+                  <div class="settings-row-desc" x-text="t('settings.receipt_upload.desc')"></div>
                 </div>
                 <label style="display:flex;align-items:center;cursor:pointer">
                   <input type="checkbox" x-model="receiptUploadEnabled" @change="saveSettings()"
@@ -938,12 +934,31 @@
                          aria-label="Enable receipt upload">
                 </label>
               </div>
+              <div class="settings-row" style="cursor:default">
+                <div class="settings-row-icon" style="background:#EFF6FF;color:#2563EB;font-size:18px;line-height:1">
+                  <span x-text="_activeLocale === 'es-AR' ? '🇦🇷' : '🇬🇧'"></span>
+                </div>
+                <div class="settings-row-text">
+                  <div class="settings-row-title" x-text="t('settings.language')"></div>
+                  <div class="settings-row-desc" x-text="t('settings.language.desc')"></div>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <div class="select-wrap" style="margin:0">
+                    <select style="padding:6px 28px 6px 10px;font-size:13px;font-weight:500;border-radius:var(--r-md);border:1px solid var(--clr-border);background:var(--clr-surface);color:var(--clr-text);cursor:pointer"
+                            @change="switchLocale($event.target.value)">
+                      <option value="en-GB" :selected="_activeLocale === 'en-GB'">🇬🇧 English</option>
+                      <option value="es-AR" :selected="_activeLocale === 'es-AR'">🇦🇷 Español</option>
+                    </select>
+                    <svg width="14" height="14" style="right:8px"><use href="#icon-chevron-down"/></svg>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Data -->
           <div class="settings-section">
-            <div class="settings-section-title">Data</div>
+            <div class="settings-section-title" x-text="t('settings.data')"></div>
             <div class="settings-card">
               <!-- Open sheet — works for both OAuth (sheetId) and AppScript (fetched URL) -->
               <div class="settings-row"
@@ -956,12 +971,12 @@
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                 </div>
                 <div class="settings-row-text">
-                  <div class="settings-row-title">Open Google Sheet</div>
+                  <div class="settings-row-title" x-text="t('settings.open_sheet')"></div>
                   <div class="settings-row-desc" x-text="
-                    sheetDisplayUrl ? 'View your expense spreadsheet' :
-                    (appMode === 'appscript' && sheetUrlFetchFailed) ? 'Script needs updating — see below' :
-                    appMode === 'appscript' ? 'Detecting…' :
-                    'Sheet not yet created — add an expense first'
+                    sheetDisplayUrl ? t('settings.sheet.ready') :
+                    (appMode === 'appscript' && sheetUrlFetchFailed) ? t('settings.sheet.needs_update') :
+                    appMode === 'appscript' ? t('settings.sheet.detecting') :
+                    t('settings.sheet.not_created')
                   "></div>
                 </div>
                 <div class="settings-row-action" x-show="sheetDisplayUrl">
@@ -999,8 +1014,8 @@
                   <svg width="18" height="18"><use href="#icon-refresh"/></svg>
                 </div>
                 <div class="settings-row-text">
-                  <div class="settings-row-title">Re-link Sheet</div>
-                  <div class="settings-row-desc">Find or recreate the ExpenseTracker sheet</div>
+                  <div class="settings-row-title" x-text="t('settings.relink')"></div>
+                  <div class="settings-row-desc" x-text="t('settings.relink.desc')"></div>
                 </div>
                 <div class="settings-row-action"><svg width="16" height="16"><use href="#icon-chevron-right"/></svg></div>
               </div>
@@ -1009,7 +1024,7 @@
 
           <!-- Account -->
           <div class="settings-section">
-            <div class="settings-section-title">Account</div>
+            <div class="settings-section-title" x-text="t('settings.account')"></div>
             <div class="settings-card">
               <!-- Google Client ID / Script URL (masked) -->
               <div class="settings-row" @click="clearClientId()" role="button" tabindex="0" @keydown.enter="clearClientId()">
@@ -1020,15 +1035,15 @@
                   <div class="settings-row-title" x-text="appMode === 'appscript' ? 'Script URL' : 'Google Client ID'"></div>
                   <div class="settings-row-desc" x-text="appMode === 'appscript' ? (maskedScriptUrl || '(not set)') : (maskedClientId || '(not set)')"></div>
                 </div>
-                <div class="settings-row-action" style="font-size:11px;color:var(--clr-danger)">Remove</div>
+                <div class="settings-row-action" style="font-size:11px;color:var(--clr-danger)" x-text="t('settings.remove')"></div>
               </div>
               <div class="settings-row" @click="signOut()" role="button" tabindex="0" @keydown.enter="signOut()">
                 <div class="settings-row-icon" style="background:var(--clr-danger-bg);color:var(--clr-danger)">
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 </div>
                 <div class="settings-row-text">
-                  <div class="settings-row-title" style="color:var(--clr-danger)">Sign Out</div>
-                  <div class="settings-row-desc">Clear session and return to sign-in</div>
+                  <div class="settings-row-title" style="color:var(--clr-danger)" x-text="t('settings.sign_out')"></div>
+                  <div class="settings-row-desc" x-text="t('settings.sign_out.desc')"></div>
                 </div>
               </div>
             </div>
@@ -1036,7 +1051,7 @@
 
           <!-- About -->
           <div class="settings-section">
-            <div class="settings-section-title">About</div>
+            <div class="settings-section-title" x-text="t('settings.about')"></div>
             <div class="settings-card">
               <div class="settings-row" style="cursor:default">
                 <div class="settings-row-icon" style="background:var(--clr-primary-light);color:var(--clr-primary)">
@@ -1052,7 +1067,7 @@
                   <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
                 </div>
                 <div class="settings-row-text">
-                  <div class="settings-row-title">View on GitHub</div>
+                  <div class="settings-row-title" x-text="t('settings.view_github')"></div>
                 </div>
                 <div class="settings-row-action"><svg width="16" height="16"><use href="#icon-link"/></svg></div>
               </div>
@@ -1068,14 +1083,14 @@
          ============================================================ -->
     <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
       <button class="nav-tab" :class="{active: currentView === 'dashboard'}"
-              @click="navigate('dashboard')" aria-label="Dashboard" role="tab" :aria-selected="currentView === 'dashboard'">
+              @click="navigate('dashboard')" :aria-label="t('nav.dashboard')" role="tab" :aria-selected="currentView === 'dashboard'">
         <svg width="22" height="22"><use href="#icon-dashboard"/></svg>
-        <span>Dashboard</span>
+        <span x-text="t('nav.dashboard')"></span>
       </button>
       <button class="nav-tab" :class="{active: currentView === 'expenses'}"
-              @click="navigate('expenses')" aria-label="Expenses" role="tab" :aria-selected="currentView === 'expenses'">
+              @click="navigate('expenses')" :aria-label="t('nav.expenses')" role="tab" :aria-selected="currentView === 'expenses'">
         <svg width="22" height="22"><use href="#icon-list"/></svg>
-        <span>Expenses</span>
+        <span x-text="t('nav.expenses')"></span>
       </button>
       <div class="nav-add-tab">
         <button class="nav-add-btn" @click="navigate('add')" aria-label="Add expense">
@@ -1083,9 +1098,9 @@
         </button>
       </div>
       <button class="nav-tab" :class="{active: currentView === 'settings'}"
-              @click="navigate('settings')" aria-label="Settings" role="tab" :aria-selected="currentView === 'settings'">
+              @click="navigate('settings')" :aria-label="t('nav.settings')" role="tab" :aria-selected="currentView === 'settings'">
         <svg width="22" height="22"><use href="#icon-settings"/></svg>
-        <span>Settings</span>
+        <span x-text="t('nav.settings')"></span>
       </button>
     </nav>
 
@@ -1113,7 +1128,7 @@
         <div>
           <div class="sheet-header">
             <div>
-              <div class="text-xs text-muted" style="margin-bottom:2px" x-text="selectedExpense.category"></div>
+              <div class="text-xs text-muted" style="margin-bottom:2px" x-text="t(selectedExpense.category)"></div>
               <div class="detail-amount" x-text="formatCurrency(selectedExpense.amount, selectedExpense.currency)"></div>
             </div>
             <button class="sheet-close" @click="closeDetail()" aria-label="Close detail">
@@ -1125,28 +1140,28 @@
             <div class="detail-row">
               <div class="detail-icon">📅</div>
               <div>
-                <div class="detail-label">Date</div>
+                <div class="detail-label" x-text="t('detail.date')"></div>
                 <div class="detail-value" x-text="formatDate(selectedExpense.date)"></div>
               </div>
             </div>
             <div class="detail-row" x-show="selectedExpense.merchant">
               <div class="detail-icon">🏪</div>
               <div>
-                <div class="detail-label">Merchant</div>
+                <div class="detail-label" x-text="t('detail.merchant')"></div>
                 <div class="detail-value" x-text="selectedExpense.merchant"></div>
               </div>
             </div>
             <div class="detail-row">
               <div class="detail-icon" x-text="getCategoryIcon(selectedExpense.category)"></div>
               <div>
-                <div class="detail-label">Category</div>
-                <div class="detail-value" x-text="selectedExpense.category"></div>
+                <div class="detail-label" x-text="t('detail.category')"></div>
+                <div class="detail-value" x-text="t(selectedExpense.category)"></div>
               </div>
             </div>
             <div class="detail-row" x-show="selectedExpense.notes">
               <div class="detail-icon">📝</div>
               <div>
-                <div class="detail-label">Notes</div>
+                <div class="detail-label" x-text="t('detail.notes')"></div>
                 <div class="detail-value" x-text="selectedExpense.notes" style="white-space:pre-wrap"></div>
               </div>
             </div>
@@ -1154,20 +1169,20 @@
             <div class="detail-row" x-show="receiptUploadEnabled || selectedExpense.receiptUrl">
               <div class="detail-icon">🧾</div>
               <div class="flex-1">
-                <div class="detail-label">Receipt</div>
+                <div class="detail-label" x-text="t('detail.receipt')"></div>
                 <template x-if="selectedExpense.receiptUrl">
                   <a :href="selectedExpense.receiptUrl" target="_blank" rel="noopener"
                      class="btn btn-sm btn-secondary" style="margin-top:var(--sp-2);display:inline-flex">
                     <svg width="14" height="14"><use href="#icon-link"/></svg>
-                    View Receipt
+                    <span x-text="t('detail.view_receipt')"></span>
                   </a>
                 </template>
                 <template x-if="!selectedExpense.receiptUrl && receiptUploadEnabled">
                   <div style="display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-2)">
-                    <span class="text-sm text-muted">No receipt attached</span>
+                    <span class="text-sm text-muted" x-text="t('detail.no_receipt')"></span>
                     <button class="btn btn-sm btn-ghost" style="padding:4px 10px;font-size:12px"
-                            @click="document.getElementById('retro-input').click()">
-                      + Add Receipt
+                            @click="document.getElementById('retro-input').click()"
+                            x-text="t('detail.add_receipt')">
                     </button>
                   </div>
                 </template>
@@ -1178,11 +1193,11 @@
           <div class="btn-row" style="border-top:1px solid var(--clr-border)">
             <button class="btn btn-danger flex-1" @click="showDeleteConfirm = true">
               <svg width="16" height="16"><use href="#icon-trash"/></svg>
-              Delete
+              <span x-text="t('detail.delete')"></span>
             </button>
             <button class="btn btn-secondary flex-1" @click="openEditExpense(selectedExpense)">
               <svg width="16" height="16"><use href="#icon-edit"/></svg>
-              Edit
+              <span x-text="t('detail.edit')"></span>
             </button>
           </div>
         </div>
@@ -1200,15 +1215,15 @@
          style="z-index:960">
       <div class="dialog">
         <div class="dialog-icon" style="background:var(--clr-danger-bg)">🗑️</div>
-        <h3>Delete Expense?</h3>
-        <p>This will permanently remove the expense from your Google Sheet. This action cannot be undone.</p>
+        <h3 x-text="t('delete.title')"></h3>
+        <p x-text="t('delete.body')"></p>
         <div class="dialog-actions">
           <button class="btn btn-secondary flex-1"
-                  @click="showDeleteConfirm = false" :disabled="isDeleting">Cancel</button>
+                  @click="showDeleteConfirm = false" :disabled="isDeleting" x-text="t('delete.cancel')"></button>
           <button class="btn btn-danger flex-1"
                   @click="confirmDelete()" :disabled="isDeleting">
-            <span x-show="!isDeleting">Delete</span>
-            <span x-show="isDeleting">Deleting…</span>
+            <span x-show="!isDeleting" x-text="t('delete.confirm')"></span>
+            <span x-show="isDeleting" x-text="t('delete.deleting')"></span>
           </button>
         </div>
       </div>

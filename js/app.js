@@ -313,10 +313,10 @@ function appData() {
         this.user = userInfo;
         this.isAuthenticated = true;
         await this._setupSheetAndLoad();
-        this.showToast(`Welcome, ${userInfo.given_name || userInfo.name}!`, 'success');
+        this.showToast(t('toast.welcome').replace('{name}', userInfo.given_name || userInfo.name), 'success');
       } catch (err) {
         console.error('Sign-in error:', err);
-        this.showToast('Sign-in failed. Please try again.', 'error');
+        this.showToast(t('toast.sign_in_failed'), 'error');
       }
     },
 
@@ -388,7 +388,7 @@ function appData() {
     },
 
     clearClientId() {
-      if (!confirm('Reset connection settings? You will need to re-run setup.')) return;
+      if (!confirm(t('confirm.reset_connection'))) return;
       localStorage.removeItem('et_client_id');
       localStorage.removeItem('et_script_url');
       const s = JSON.parse(localStorage.getItem('et_settings') || '{}');
@@ -440,7 +440,7 @@ function appData() {
 
     handleAuthError() {
       sessionStorage.removeItem('et_token');
-      this.showToast('Session expired — please sign in again.', 'warning');
+      this.showToast(t('toast.session_expired'), 'warning');
       this.isAuthenticated = false;
       this.user = null;
       this.expenses = [];
@@ -507,7 +507,7 @@ function appData() {
           await this._ensureSheet();
           this.expenses = [];
         } else {
-          this.showToast('Failed to load expenses.', 'error');
+          this.showToast(t('toast.load_failed'), 'error');
         }
       } finally {
         this.isLoading = false;
@@ -516,7 +516,7 @@ function appData() {
 
     async refreshExpenses() {
       await this.loadExpenses();
-      this.showToast('Expenses refreshed.', 'success');
+      this.showToast(t('toast.refreshed'), 'success');
     },
 
     // ==============================================
@@ -531,7 +531,8 @@ function appData() {
         result = result.filter((e) =>
           (e.merchant || '').toLowerCase().includes(q) ||
           (e.notes    || '').toLowerCase().includes(q) ||
-          (e.category || '').toLowerCase().includes(q)
+          (e.category || '').toLowerCase().includes(q) ||
+          t(e.category || '').toLowerCase().includes(q)
         );
       }
 
@@ -571,7 +572,7 @@ function appData() {
 
     navigate(view) {
       if (this.formDirty && this.currentView === 'add') {
-        if (!confirm('Discard unsaved changes?')) return;
+        if (!confirm(t('confirm.discard'))) return;
         this.formDirty = false;
       }
       if (view === 'add') {
@@ -584,7 +585,7 @@ function appData() {
     },
 
     goBack() {
-      if (this.formDirty && !confirm('Discard unsaved changes?')) return;
+      if (this.formDirty && !confirm(t('confirm.discard'))) return;
       this.formDirty = false;
       const dest = this.previousView || 'expenses';
       this.currentView = dest;
@@ -645,13 +646,13 @@ function appData() {
       const errors = {};
       const amount = parseFloat(this.form.amount);
       if (!this.form.amount || isNaN(amount) || amount <= 0) {
-        errors.amount = 'Please enter a valid positive amount.';
+        errors.amount = t('error.amount');
       }
       if (!this.form.category) {
-        errors.category = 'Please select a category.';
+        errors.category = t('error.category');
       }
       if (this.form.category === 'Other' && !this.form.customCategory.trim()) {
-        errors.customCategory = 'Please enter a custom category name.';
+        errors.customCategory = t('error.custom_category');
       }
       this.formErrors = errors;
       return Object.keys(errors).length === 0;
@@ -674,7 +675,7 @@ function appData() {
         } catch (uploadErr) {
           console.warn('Receipt upload failed:', uploadErr);
           if (uploadErr.status === 401) { this.handleAuthError(); this.isSaving = false; return; }
-          this.showToast('Expense saved, but receipt upload failed. Retry from the expense detail.', 'warning');
+          this.showToast(t('toast.saved_receipt_failed'), 'warning');
           receiptUrl = '';
         }
       }
@@ -697,17 +698,17 @@ function appData() {
           await this._dbUpdate(expense);
           const idx = this.expenses.findIndex((e) => e.id === expense.id);
           if (idx >= 0) this.expenses.splice(idx, 1, expense);
-          this.showToast('Expense updated.', 'success');
+          this.showToast(t('toast.updated'), 'success');
         } else {
           await this._dbAppend(expense);
           this.expenses.unshift(expense);
-          this.showToast('Expense saved.', 'success');
+          this.showToast(t('toast.saved'), 'success');
         }
         this.formDirty = false;
         this.goBack();
       } catch (err) {
         if (err.status === 401) { this.handleAuthError(); return; }
-        this.showToast('Failed to save. Please try again.', 'error');
+        this.showToast(t('toast.save_failed'), 'error');
         console.error('Save error:', err);
       } finally {
         this.isSaving = false;
@@ -715,7 +716,7 @@ function appData() {
     },
 
     cancelForm() {
-      if (this.formDirty && !confirm('Discard unsaved changes?')) return;
+      if (this.formDirty && !confirm(t('confirm.discard'))) return;
       this.formDirty = false;
       const dest = this.previousView || 'expenses';
       this.currentView = dest;
@@ -765,10 +766,10 @@ function appData() {
         const idx = this.expenses.findIndex((e) => e.id === expense.id);
         if (idx >= 0) this.expenses.splice(idx, 1, updated);
         this.selectedExpense = updated;
-        this.showToast('Receipt added.', 'success');
+        this.showToast(t('toast.receipt_added'), 'success');
       } catch (err) {
         if (err.status === 401) { this.handleAuthError(); return; }
-        this.showToast('Receipt upload failed.', 'error');
+        this.showToast(t('toast.receipt_failed'), 'error');
       }
     },
 
@@ -795,10 +796,10 @@ function appData() {
         await this._dbDelete(this.selectedExpense.id);
         this.expenses = this.expenses.filter((e) => e.id !== this.selectedExpense.id);
         this.closeDetail();
-        this.showToast('Expense deleted.', 'success');
+        this.showToast(t('toast.deleted'), 'success');
       } catch (err) {
         if (err.status === 401) { this.handleAuthError(); return; }
-        this.showToast('Failed to delete. Please try again.', 'error');
+        this.showToast(t('toast.delete_failed'), 'error');
       } finally {
         this.isDeleting = false;
       }
@@ -899,7 +900,7 @@ function appData() {
           })
           .reduce((s, e) => s + parseFloat(e.amount || 0), 0);
         monthTrend.push({
-          label: d.toLocaleString('default', { month: 'short' }),
+          label: d.toLocaleString(window._activeLocale || 'en-GB', { month: 'short' }),
           total: monthTotal,
         });
       }
@@ -922,11 +923,12 @@ function appData() {
         const amounts    = categories.map((c) => data.byCategory[c]);
         const colors     = categories.map((c) => CONFIG.CATEGORY_COLORS[c] || '#9CA3AF');
         const isEmpty    = categories.length === 0;
+        const chartLabels = isEmpty ? [t('dashboard.chart_no_data')] : categories.map((c) => t(c));
 
         window._categoryChart = new Chart(catEl, {
           type: 'doughnut',
           data: {
-            labels:   isEmpty ? ['No data'] : categories,
+            labels:   chartLabels,
             datasets: [{
               data:            isEmpty ? [1] : amounts,
               backgroundColor: isEmpty ? ['#E5E7EB'] : colors,
@@ -1029,7 +1031,7 @@ function appData() {
       const scriptUrl = localStorage.getItem('et_script_url') || '';
       const newUrl    = this._buildConfigUrl(clientId || null, sheetId || null, this.defaultCurrency || null, this.receiptUploadEnabled, scriptUrl || null);
       window.history.replaceState(null, '', newUrl);
-      this.showToast('Settings saved.', 'success');
+      this.showToast(t('toast.settings_saved'), 'success');
     },
 
     openSheet() {
@@ -1045,7 +1047,7 @@ function appData() {
       this.sheetUrlFetchFailed = false;
       localStorage.setItem('et_sheet_display_url', url);
       this.sheetUrlInput = '';
-      this.showToast('Sheet URL saved.', 'success');
+      this.showToast(t('toast.sheet_url_saved'), 'success');
     },
 
     getScriptSource() {
@@ -1055,19 +1057,19 @@ function appData() {
     async copyScriptSource() {
       try {
         await navigator.clipboard.writeText(AppScript.SCRIPT_SOURCE);
-        this.showToast('Script copied to clipboard.', 'success');
+        this.showToast(t('toast.script_copied'), 'success');
       } catch {
-        this.showToast('Copy failed — please select and copy manually.', 'error');
+        this.showToast(t('toast.copy_failed'), 'error');
       }
     },
 
     async relinkSheet() {
-      if (!confirm('This will create or re-link your Google Sheet. Continue?')) return;
+      if (!confirm(t('confirm.relink'))) return;
       localStorage.removeItem('et_sheet_id');
       this.sheetId = null;
       await this._ensureSheet();
       await this.loadExpenses();
-      this.showToast('Sheet re-linked.', 'success');
+      this.showToast(t('toast.sheet_relinked'), 'success');
     },
 
     get sheetUrl() {
@@ -1091,32 +1093,34 @@ function appData() {
     formatCurrency(amount, currency) {
       const num = parseFloat(amount) || 0;
       const cur = (currency || this.defaultCurrency || '').toUpperCase();
+      const locale = window._activeLocale || 'en-GB';
       if (!cur) {
         // No currency info — render as a plain decimal number
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat(locale, {
           minimumFractionDigits: 2, maximumFractionDigits: 2,
         }).format(num);
       }
       try {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat(locale, {
           style: 'currency', currency: cur,
           minimumFractionDigits: 2, maximumFractionDigits: 2,
         }).format(num);
       } catch {
         // Unknown currency code — prefix manually
-        return `${cur} ${num.toFixed(2)}`;
+        return `${cur} ${new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num)}`;
       }
     },
 
     formatCurrencyCompact(amount, currency) {
       const num = parseFloat(amount) || 0;
       const cur = (currency || this.defaultCurrency || '').toUpperCase();
+      const locale = window._activeLocale || 'en-GB';
       if (!cur) {
         if (num === 0) return '0';
         return num >= 1000 ? `${(num / 1000).toFixed(1)}k` : String(Math.round(num));
       }
       try {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat(locale, {
           style: 'currency', currency: cur,
           notation: 'compact', maximumFractionDigits: 1,
         }).format(num);
@@ -1127,8 +1131,9 @@ function appData() {
 
     formatDate(dateStr) {
       if (!dateStr) return '';
+      const locale = window._activeLocale || 'en-GB';
       try {
-        return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+        return new Date(dateStr + 'T00:00:00').toLocaleDateString(locale, {
           month: 'short', day: 'numeric', year: 'numeric',
         });
       } catch { return dateStr; }
@@ -1136,8 +1141,9 @@ function appData() {
 
     formatDateShort(dateStr) {
       if (!dateStr) return '';
+      const locale = window._activeLocale || 'en-GB';
       try {
-        return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+        return new Date(dateStr + 'T00:00:00').toLocaleDateString(locale, {
           month: 'short', day: 'numeric',
         });
       } catch { return dateStr; }
