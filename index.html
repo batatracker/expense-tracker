@@ -22,6 +22,32 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/app.css">
+
+  <!-- emoji-picker-element: full-featured emoji picker web component -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
+  <style>
+    emoji-picker {
+      --background:              var(--clr-surface);
+      --border-color:            var(--clr-border);
+      --border-radius:           0;
+      --emoji-padding:           .35rem;
+      --emoji-size:              1.375rem;
+      --indicator-color:         var(--clr-primary);
+      --input-border-color:      var(--clr-border);
+      --input-border-radius:     var(--r-md);
+      --input-font-color:        var(--clr-text);
+      --input-font-size:         .875rem;
+      --input-line-height:       1.5;
+      --input-padding:           .5rem;
+      --input-placeholder-color: var(--clr-text-3);
+      --num-columns:             8;
+      --outline-color:           var(--clr-primary);
+      width: 100%;
+      border: none;
+      box-shadow: none;
+    }
+  </style>
+
   <!-- Anti-flash: apply saved theme before first paint -->
   <script>
     (function(){
@@ -425,14 +451,25 @@
     <!-- Desktop sidebar nav (hidden on mobile via CSS) -->
     <nav class="sidebar-nav" role="navigation" aria-label="Main navigation">
       <div class="sidebar-brand">
-        <svg width="28" height="28" viewBox="0 0 36 36" fill="none" style="flex-shrink:0">
-          <rect x="4" y="8" width="28" height="20" rx="3" fill="var(--clr-primary)" fill-opacity="0.12"/>
-          <rect x="4" y="8" width="28" height="6" rx="3" fill="var(--clr-primary)"/>
-          <circle cx="11" cy="22" r="3" fill="var(--clr-primary)" fill-opacity="0.6"/>
-          <rect x="17" y="20" width="11" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.4"/>
-          <rect x="17" y="23" width="7" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.3"/>
-        </svg>
-        <span class="sidebar-brand-name" x-text="t('nav.expenses')"></span>
+        <!-- Custom icon: emoji -->
+        <template x-if="appIcon && !brandingIconIsFile">
+          <span style="font-size:24px;line-height:1;flex-shrink:0" x-text="appIcon"></span>
+        </template>
+        <!-- Custom icon: uploaded image -->
+        <template x-if="appIcon && brandingIconIsFile && _brandingIconUrl">
+          <img :src="_brandingIconUrl" width="28" height="28" style="border-radius:var(--r-sm);flex-shrink:0;object-fit:contain" alt="App icon">
+        </template>
+        <!-- Default SVG icon -->
+        <template x-if="!appIcon">
+          <svg width="28" height="28" viewBox="0 0 36 36" fill="none" style="flex-shrink:0">
+            <rect x="4" y="8" width="28" height="20" rx="3" fill="var(--clr-primary)" fill-opacity="0.12"/>
+            <rect x="4" y="8" width="28" height="6" rx="3" fill="var(--clr-primary)"/>
+            <circle cx="11" cy="22" r="3" fill="var(--clr-primary)" fill-opacity="0.6"/>
+            <rect x="17" y="20" width="11" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.4"/>
+            <rect x="17" y="23" width="7" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.3"/>
+          </svg>
+        </template>
+        <span class="sidebar-brand-name" x-text="appTitle || t('nav.expenses')"></span>
       </div>
       <button class="sidebar-add-btn" @click="navigate('add')">
         <svg width="15" height="15"><use href="#icon-plus"/></svg>
@@ -483,6 +520,8 @@
     <input type="file" id="camera-input"    accept="image/*" capture="environment" style="display:none" @change="handleFileSelect($event)">
     <input type="file" id="file-input"      accept="image/*,.pdf" style="display:none"                  @change="handleFileSelect($event)">
     <input type="file" id="retro-input"     accept="image/*,.pdf" style="display:none"                  @change="handleRetroactiveReceipt($event)">
+    <!-- Hidden file input for branding icon -->
+    <input type="file" id="branding-icon-upload" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" style="display:none" @change="handleBrandingIconUpload($event)">
 
     <!-- ===========================================================
          VIEW CONTAINER
@@ -953,6 +992,92 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- App Branding -->
+          <div class="settings-section">
+            <div class="settings-section-title">App Branding</div>
+            <div class="settings-card" style="padding:var(--sp-4)">
+
+              <!-- App Title -->
+              <div style="margin-bottom:var(--sp-4)">
+                <label class="form-label" for="branding-title">App Title</label>
+                <input id="branding-title" type="text" class="form-input"
+                       :value="appTitle"
+                       @input="appTitle = $event.target.value"
+                       placeholder="Expense Tracker"
+                       @change="saveBranding()">
+              </div>
+
+              <!-- App Icon -->
+              <div style="margin-bottom:var(--sp-3)">
+                <label class="form-label">App Icon</label>
+                <div style="display:flex;gap:var(--sp-3);align-items:flex-start">
+
+                  <!-- Preview -->
+                  <div style="width:48px;height:48px;border-radius:var(--r-md);background:var(--clr-surface-2);border:1px solid var(--clr-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+                    <template x-if="_brandingIconUrl">
+                      <img :src="_brandingIconUrl" style="width:40px;height:40px;object-fit:contain" alt="Icon preview">
+                    </template>
+                    <template x-if="!_brandingIconUrl">
+                      <span style="font-size:22px;color:var(--clr-text-3)">🖼️</span>
+                    </template>
+                  </div>
+
+                  <!-- Controls -->
+                  <div style="flex:1">
+
+                    <!-- Emoji picker trigger -->
+                    <button type="button"
+                            class="btn btn-secondary btn-sm"
+                            style="width:100%;justify-content:space-between;margin-bottom:var(--sp-2)"
+                            @click="showEmojiPicker = !showEmojiPicker">
+                      <span>
+                        <template x-if="!brandingIconIsFile && appIcon">
+                          <span><span x-text="appIcon"></span> Change emoji</span>
+                        </template>
+                        <template x-if="brandingIconIsFile || !appIcon">
+                          <span>Choose emoji</span>
+                        </template>
+                      </span>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                           :style="showEmojiPicker ? 'transform:rotate(180deg)' : ''">
+                        <polyline points="3 6 7 10 11 6"/>
+                      </svg>
+                    </button>
+
+                    <!-- Image upload -->
+                    <button class="btn btn-secondary btn-sm" type="button"
+                            style="width:100%"
+                            @click="document.getElementById('branding-icon-upload').click()">
+                      Upload image
+                    </button>
+
+                  </div>
+                </div>
+
+                <!-- Emoji picker — rendered inline so it is never clipped by the card -->
+                <div x-show="showEmojiPicker" x-transition style="margin-top:var(--sp-2);border:1px solid var(--clr-border);border-radius:var(--r-lg);overflow:hidden">
+                  <emoji-picker
+                    :class="darkMode ? 'dark' : ''"
+                    @emoji-click="pickEmoji($event.detail.unicode)">
+                  </emoji-picker>
+                </div>
+
+                <!-- Size warning -->
+                <div x-show="brandingIconSizeWarning"
+                     style="margin-top:var(--sp-2);padding:var(--sp-2) var(--sp-3);background:#FFF7ED;border-radius:var(--r-md);border:1px solid #FED7AA;font-size:12px;color:#92400E;line-height:1.4">
+                  ⚠️ The icon is large — the bookmark URL will be very long.
+                </div>
+              </div>
+
+              <!-- Reset -->
+              <button class="btn btn-ghost btn-sm" @click="resetBranding()"
+                      style="color:var(--clr-text-3);padding-left:0">
+                Reset to defaults
+              </button>
+
             </div>
           </div>
 

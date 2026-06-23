@@ -83,6 +83,12 @@ function appData() {
     receiptUploadEnabled: false, // opt-in; requires drive.file scope
     darkMode: false,
 
+    // ==================  BRANDING  ==================
+    appTitle: '',         // custom app title; empty = use default ("Expense Tracker")
+    appIcon: '',          // emoji (≤10 chars) OR base64 data-URI; empty = use default favicon
+    _brandingIconUrl: '', // resolved PNG data-URI used for preview and favicon injection
+    showEmojiPicker: false,
+
     // ==============================================
     //  INIT
     // ==============================================
@@ -95,7 +101,8 @@ function appData() {
       try {
         const param = new URLSearchParams(window.location.search).get('cfg');
         if (!param) return false;
-        const cfg = JSON.parse(atob(param));
+        // Unicode-safe decode (backward-compatible with ASCII-only encoded URLs).
+        const cfg = JSON.parse(decodeURIComponent(atob(param).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')));
         if (cfg.clientId)  localStorage.setItem('et_client_id', cfg.clientId);
         if (cfg.sheetId)   localStorage.setItem('et_sheet_id',  cfg.sheetId);
         if (cfg.currency || cfg.receiptUpload !== undefined || cfg.appMode || cfg.scriptUrl) {
@@ -106,6 +113,8 @@ function appData() {
           localStorage.setItem('et_settings', JSON.stringify(existing));
         }
         if (cfg.scriptUrl)  localStorage.setItem('et_script_url', cfg.scriptUrl);
+        if (cfg.appTitle)  this.appTitle = cfg.appTitle;
+        if (cfg.appIcon)   this.appIcon  = cfg.appIcon;
         return true;
       } catch { return false; }
     },
@@ -118,11 +127,69 @@ function appData() {
       if (receiptUpload !== undefined) cfg.receiptUpload = receiptUpload;
       if (scriptUrl)                   cfg.scriptUrl     = scriptUrl;
       if (scriptUrl)                   cfg.appMode       = 'appscript';
-      const encoded = btoa(JSON.stringify(cfg));
+      if (this.appTitle)               cfg.appTitle      = this.appTitle;
+      if (this.appIcon)                cfg.appIcon       = this.appIcon;
+      // Unicode-safe base64: handles emoji and other non-Latin1 characters.
+      const json = JSON.stringify(cfg);
+      const encoded = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/gi, (_, p1) => String.fromCharCode(parseInt(p1, 16))));
       const url = new URL(window.location.href);
       url.searchParams.set('cfg', encoded);
       // Keep any existing hash (route)
       return url.toString();
+    },
+
+    // --------------------------------------------------
+    //  Branding: apply custom title and favicon from URL config.
+    //  Called once during init, after _loadConfigFromUrl().
+    // --------------------------------------------------
+    _applyBranding() {
+      if (this.appTitle) {
+        document.title = this.appTitle;
+        const metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        if (metaTitle) metaTitle.setAttribute('content', this.appTitle);
+      }
+      if (this.appIcon) {
+        const dataUri = this._resolveIconDataUri(this.appIcon);
+        if (dataUri) {
+          this._brandingIconUrl = dataUri;
+          this._injectFavicon(dataUri, this.appIcon.length > 10);
+        }
+      }
+    },
+
+    // Emoji (≤10 chars) → render to canvas → PNG data-URI.
+    // Longer string → treat as a base64 data-URI and return as-is.
+    _resolveIconDataUri(icon) {
+      if (!icon) return '';
+      if (icon.length <= 10) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 64; canvas.height = 64;
+          const ctx = canvas.getContext('2d');
+          ctx.font = '48px serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(icon, 32, 36);
+          return canvas.toDataURL('image/png');
+        } catch { return ''; }
+      }
+      return icon; // already a data-URI
+    },
+
+    _injectFavicon(dataUri, isImage) {
+      document.querySelectorAll('link[data-branding]').forEach(el => el.remove());
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = dataUri;
+      link.setAttribute('data-branding', '1');
+      document.head.appendChild(link);
+      if (isImage) {
+        const appleLink = document.createElement('link');
+        appleLink.rel = 'apple-touch-icon';
+        appleLink.href = dataUri;
+        appleLink.setAttribute('data-branding', '1');
+        document.head.appendChild(appleLink);
+      }
     },
 
     // Dark mode — called first to avoid flash (CSS anti-flash script handles
@@ -148,6 +215,8 @@ function appData() {
 
       // Check URL for ?cfg= param — restores config after localStorage wipe.
       this._loadConfigFromUrl();
+      // Apply custom title/favicon from URL config before first render.
+      this._applyBranding();
 
       // Read persisted appMode and scriptUrl
       const saved = JSON.parse(localStorage.getItem('et_settings') || '{}');
@@ -1033,6 +1102,77 @@ function appData() {
       window.history.replaceState(null, '', newUrl);
       this.showToast(t('toast.settings_saved'), 'success');
     },
+
+    // --------------------------------------------------
+    //  BRANDING (settings)
+    // --------------------------------------------------
+
+    // Convert a selected image file to a base64 data-URI and save it as the icon.
+    handleBrandingIconUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.appIcon = e.target.result;
+        this.saveBranding();
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    },
+
+    // Persist current appTitle/appIcon into the URL (same pattern as saveSettings).
+    saveBranding() {
+      this._applyBranding();
+      const clientId  = localStorage.getItem('et_client_id')  || '';
+      const sheetId   = localStorage.getItem('et_sheet_id')   || '';
+      const scriptUrl = localStorage.getItem('et_script_url') || '';
+      const newUrl = this._buildConfigUrl(
+        clientId  || null,
+        sheetId   || null,
+        this.defaultCurrency || null,
+        this.receiptUploadEnabled,
+        scriptUrl || null,
+      );
+      window.history.replaceState(null, '', newUrl);
+      this.showToast('Branding saved', 'success');
+    },
+
+    resetBranding() {
+      this.appTitle = '';
+      this.appIcon  = '';
+      this._brandingIconUrl = '';
+      document.title = 'Expense Tracker';
+      const metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (metaTitle) metaTitle.setAttribute('content', 'Expenses');
+      document.querySelectorAll('link[data-branding]').forEach(el => el.remove());
+      const clientId  = localStorage.getItem('et_client_id')  || '';
+      const sheetId   = localStorage.getItem('et_sheet_id')   || '';
+      const scriptUrl = localStorage.getItem('et_script_url') || '';
+      const newUrl = this._buildConfigUrl(
+        clientId  || null,
+        sheetId   || null,
+        this.defaultCurrency || null,
+        this.receiptUploadEnabled,
+        scriptUrl || null,
+      );
+      window.history.replaceState(null, '', newUrl);
+      this.showToast('Branding reset to defaults', 'success');
+    },
+
+    pickEmoji(emoji) {
+      this.appIcon = emoji;
+      this.showEmojiPicker = false;
+      this.saveBranding();
+    },
+
+    get brandingIconIsFile() {
+      return this.appIcon.length > 10;
+    },
+
+    get brandingIconSizeWarning() {
+      return this.appIcon.length > 10240;
+    },
+
 
     openSheet() {
       const url = this.sheetDisplayUrl ||
