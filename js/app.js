@@ -8,8 +8,13 @@ function appData() {
 
     // ==================  SETUP  ==================
     isSetupNeeded: false,
-    setupForm: { clientId: '', sheetId: '', defaultCurrency: '', receiptUpload: false },
+    setupMode: null,   // null → pick mode; 'fresh' → auto-create sheet; 'existing' → paste link; 'appscript' → no OAuth
+    setupForm: { clientId: '', spreadsheetUrl: '', defaultCurrency: '', scriptUrl: '' },
     setupErrors: {},
+    appMode: 'oauth',       // 'oauth' | 'appscript'
+    scriptUrl: null,
+    setupStep: 1,           // wizard step for appscript mode
+    setupVerifying: false,
 
     // ==================  AUTH  ==================
     isInitializing: true,
@@ -89,22 +94,26 @@ function appData() {
         const cfg = JSON.parse(atob(param));
         if (cfg.clientId)  localStorage.setItem('et_client_id', cfg.clientId);
         if (cfg.sheetId)   localStorage.setItem('et_sheet_id',  cfg.sheetId);
-        if (cfg.currency || cfg.receiptUpload !== undefined) {
+        if (cfg.currency || cfg.receiptUpload !== undefined || cfg.appMode || cfg.scriptUrl) {
           const existing = JSON.parse(localStorage.getItem('et_settings') || '{}');
           if (cfg.currency)                   existing.defaultCurrency = cfg.currency;
           if (cfg.receiptUpload !== undefined) existing.receiptUpload   = cfg.receiptUpload;
+          if (cfg.appMode)                    existing.appMode          = cfg.appMode;
           localStorage.setItem('et_settings', JSON.stringify(existing));
         }
+        if (cfg.scriptUrl)  localStorage.setItem('et_script_url', cfg.scriptUrl);
         return true;
       } catch { return false; }
     },
 
-    _buildConfigUrl(clientId, sheetId, currency, receiptUpload) {
+    _buildConfigUrl(clientId, sheetId, currency, receiptUpload, scriptUrl) {
       const cfg = {};
       if (clientId)                    cfg.clientId      = clientId;
       if (sheetId)                     cfg.sheetId       = sheetId;
       if (currency)                    cfg.currency      = currency;
       if (receiptUpload !== undefined) cfg.receiptUpload = receiptUpload;
+      if (scriptUrl)                   cfg.scriptUrl     = scriptUrl;
+      if (scriptUrl)                   cfg.appMode       = 'appscript';
       const encoded = btoa(JSON.stringify(cfg));
       const url = new URL(window.location.href);
       url.searchParams.set('cfg', encoded);
@@ -115,6 +124,47 @@ function appData() {
     async init() {
       // Check URL for ?cfg= param — restores config after localStorage wipe.
       this._loadConfigFromUrl();
+
+      // Read persisted appMode and scriptUrl
+      const saved = JSON.parse(localStorage.getItem('et_settings') || '{}');
+      if (saved.appMode) this.appMode = saved.appMode;
+      this.scriptUrl = localStorage.getItem('et_script_url') || null;
+
+      // AppScript mode — no OAuth needed
+      if (this.appMode === 'appscript') {
+        if (!this.scriptUrl) {
+          this.isSetupNeeded = true;
+          this.isInitializing = false;
+          return;
+        }
+        // Load settings
+        try {
+          const s = JSON.parse(localStorage.getItem('et_settings') || '{}');
+          if (s.defaultCurrency !== undefined) this.defaultCurrency = s.defaultCurrency;
+          if (s.receiptUpload   !== undefined) this.receiptUploadEnabled = s.receiptUpload;
+        } catch {}
+        this.form.currency = this.defaultCurrency;
+        AppScript.init(this.scriptUrl);
+        this.isAuthenticated = true;
+        this.isInitializing = false;
+        await this.loadExpenses();
+        // Wire watchers and hash routing (same as OAuth path)
+        this.$watch('currentView', (view) => {
+          if (view === 'dashboard') this.$nextTick(() => this.initCharts());
+        });
+        this.$watch('dashPeriod', () => {
+          if (this.currentView === 'dashboard') this.$nextTick(() => this.initCharts());
+        });
+        this.$watch('expenses', () => {
+          if (this.currentView === 'dashboard') this.$nextTick(() => this.initCharts());
+        }, { deep: false });
+        window.addEventListener('hashchange', () => this._handleHash());
+        this._handleHash();
+        // Charts won't auto-trigger if currentView was already 'dashboard' (watcher ignores no-ops)
+        if (this.currentView === 'dashboard') this.$nextTick(() => this.initCharts());
+        this._initPullToRefresh();
+        return;
+      }
 
       // Guard: require a Client ID before doing anything else.
       // Checked from localStorage (set via setup screen) OR from config.js.
@@ -127,9 +177,9 @@ function appData() {
 
       // Restore settings
       try {
-        const saved = JSON.parse(localStorage.getItem('et_settings') || '{}');
-        if (saved.defaultCurrency !== undefined) this.defaultCurrency = saved.defaultCurrency;
-        if (saved.receiptUpload    !== undefined) this.receiptUploadEnabled = saved.receiptUpload;
+        const s = JSON.parse(localStorage.getItem('et_settings') || '{}');
+        if (s.defaultCurrency !== undefined) this.defaultCurrency = s.defaultCurrency;
+        if (s.receiptUpload    !== undefined) this.receiptUploadEnabled = s.receiptUpload;
       } catch {}
 
       this.form.currency = this.defaultCurrency;
@@ -174,6 +224,8 @@ function appData() {
       // Hash routing
       window.addEventListener('hashchange', () => this._handleHash());
       this._handleHash();
+      // Charts won't auto-trigger if currentView was already 'dashboard' (watcher ignores no-ops)
+      if (this.currentView === 'dashboard') this.$nextTick(() => this.initCharts());
 
       // Pull-to-refresh on expense list
       this._initPullToRefresh();
@@ -245,38 +297,65 @@ function appData() {
     //  SETUP
     // ==============================================
 
+    // Extract a Google Sheet ID from a full URL or a raw ID string.
+    _parseSheetId(input) {
+      const match = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+      if (match) return match[1];
+      if (/^[a-zA-Z0-9_-]{20,}$/.test(input.trim())) return input.trim();
+      return null;
+    },
+
     saveSetup() {
-      const errors = {};
-      const id = this.setupForm.clientId.trim();
-      if (!id) {
-        errors.clientId = 'Please enter your Google OAuth Client ID.';
+      if (this.setupMode === 'appscript') {
+        // scriptUrl already verified by verifyScript()
+        const url = this.setupForm.scriptUrl.trim();
+        const cur = this.setupForm.defaultCurrency.trim().toUpperCase();
+        localStorage.setItem('et_script_url', url);
+        localStorage.setItem('et_settings', JSON.stringify({ appMode: 'appscript', defaultCurrency: cur || '', receiptUpload: false }));
+        window.location.href = this._buildConfigUrl(null, null, cur || null, false, url);
+        return;
       }
+
+      const errors = {};
+      const clientId = this.setupForm.clientId.trim();
+      if (!clientId) errors.clientId = 'Google OAuth Client ID is required.';
+
+      let sheetId = null;
+      if (this.setupMode === 'existing') {
+        const raw = this.setupForm.spreadsheetUrl.trim();
+        if (!raw) {
+          errors.spreadsheetUrl = 'Please paste your Google Sheet URL or ID.';
+        } else {
+          sheetId = this._parseSheetId(raw);
+          if (!sheetId) errors.spreadsheetUrl = 'Could not find a Sheet ID in that URL. Check the format.';
+        }
+      }
+
       this.setupErrors = errors;
       if (Object.keys(errors).length > 0) return;
 
-      localStorage.setItem('et_client_id', id);
-      // Optional fields
-      const cur = this.setupForm.defaultCurrency.trim().toUpperCase();
-      const receipt = this.setupForm.receiptUpload;
-      const settings = {};
-      if (cur)     settings.defaultCurrency = cur;
-      settings.receiptUpload = receipt;
-      localStorage.setItem('et_settings', JSON.stringify(settings));
+      // Receipt upload is only available in fresh mode (requires Drive folder setup).
+      const receiptUpload = this.setupMode === 'fresh';
 
-      // Optional: pre-register an existing Sheet ID
-      const sid = this.setupForm.sheetId.trim();
-      if (sid) {
-        localStorage.setItem('et_sheet_id', sid);
-      }
-      // Encode config into URL so a bookmarked link survives localStorage wipes.
-      // Navigate to that URL (also causes a reload so auth.js picks up the new Client ID).
-      window.location.href = this._buildConfigUrl(id, sid || null, cur || null, receipt);
+      localStorage.setItem('et_client_id', clientId);
+      const cur = this.setupForm.defaultCurrency.trim().toUpperCase();
+      localStorage.setItem('et_settings', JSON.stringify({
+        defaultCurrency: cur || '',
+        receiptUpload,
+      }));
+      if (sheetId) localStorage.setItem('et_sheet_id', sheetId);
+
+      // Embed config in URL so a bookmarked link survives localStorage wipes.
+      window.location.href = this._buildConfigUrl(clientId, sheetId, cur || null, receiptUpload, null);
     },
 
     clearClientId() {
-      if (!confirm('Remove the saved Client ID? You will need to re-enter it.')) return;
+      if (!confirm('Reset connection settings? You will need to re-run setup.')) return;
       localStorage.removeItem('et_client_id');
-      // Also remove the ?cfg= param so bookmarked URL no longer auto-restores.
+      localStorage.removeItem('et_script_url');
+      const s = JSON.parse(localStorage.getItem('et_settings') || '{}');
+      delete s.appMode;
+      localStorage.setItem('et_settings', JSON.stringify(s));
       const url = new URL(window.location.href);
       url.searchParams.delete('cfg');
       window.location.href = url.toString();
@@ -286,6 +365,35 @@ function appData() {
       const id = localStorage.getItem('et_client_id') || '';
       if (!id) return '';
       return id.length > 24 ? id.slice(0, 12) + '…' + id.slice(-8) : id;
+    },
+
+    get maskedScriptUrl() {
+      const url = localStorage.getItem('et_script_url') || '';
+      if (!url) return '';
+      return url.length > 40 ? url.slice(0, 30) + '…' + url.slice(-8) : url;
+    },
+
+    async verifyScript() {
+      const url = this.setupForm.scriptUrl.trim();
+      if (!url || !url.startsWith('https://')) {
+        this.setupErrors = { scriptUrl: 'Please paste the deployment URL (starts with https://).' };
+        return;
+      }
+      this.setupVerifying = true;
+      this.setupErrors = {};
+      try {
+        AppScript.init(url);
+        const ok = await AppScript.ping();
+        if (ok) {
+          this.saveSetup();
+        } else {
+          this.setupErrors = { scriptUrl: 'Script responded but returned unexpected data. Check the deployment.' };
+        }
+      } catch {
+        this.setupErrors = { scriptUrl: 'Could not reach the script. Check it is deployed as "Anyone" access and try again.' };
+      } finally {
+        this.setupVerifying = false;
+      }
     },
 
     // ==============================================
@@ -320,18 +428,41 @@ function appData() {
     },
 
     // ==============================================
+    //  DATA ADAPTER (routes to AppScript or Sheets)
+    // ==============================================
+
+    async _dbRead() {
+      if (this.appMode === 'appscript') return AppScript.readAllExpenses();
+      return Sheets.readAllExpenses(this.sheetId);
+    },
+    async _dbAppend(expense) {
+      if (this.appMode === 'appscript') return AppScript.appendExpense(expense);
+      return Sheets.appendExpense(this.sheetId, expense);
+    },
+    async _dbUpdate(expense) {
+      if (this.appMode === 'appscript') return AppScript.updateExpense(expense);
+      return Sheets.updateExpense(this.sheetId, expense);
+    },
+    async _dbDelete(id) {
+      if (this.appMode === 'appscript') return AppScript.deleteExpense(id);
+      return Sheets.deleteExpense(this.sheetId, id);
+    },
+
+    // ==============================================
     //  DATA
     // ==============================================
 
     async loadExpenses() {
-      if (!this.sheetId) await this._ensureSheet();
-      if (!this.sheetId) return;
+      if (this.appMode !== 'appscript') {
+        if (!this.sheetId) await this._ensureSheet();
+        if (!this.sheetId) return;
+      }
       this.isLoading = true;
       try {
-        this.expenses = await Sheets.readAllExpenses(this.sheetId);
+        this.expenses = await this._dbRead();
       } catch (err) {
         if (err.status === 401) { this.handleAuthError(); return; }
-        if (err.status === 404) {
+        if (err.status === 404 && this.appMode !== 'appscript') {
           localStorage.removeItem('et_sheet_id');
           this.sheetId = null;
           await this._ensureSheet();
@@ -524,12 +655,12 @@ function appData() {
 
       try {
         if (this.isEditing) {
-          await Sheets.updateExpense(this.sheetId, expense);
+          await this._dbUpdate(expense);
           const idx = this.expenses.findIndex((e) => e.id === expense.id);
           if (idx >= 0) this.expenses.splice(idx, 1, expense);
           this.showToast('Expense updated.', 'success');
         } else {
-          await Sheets.appendExpense(this.sheetId, expense);
+          await this._dbAppend(expense);
           this.expenses.unshift(expense);
           this.showToast('Expense saved.', 'success');
         }
@@ -591,7 +722,7 @@ function appData() {
         const toUpload = file.type.startsWith('image/') ? await Drive.compressImage(file) : file;
         const receiptUrl = await Drive.uploadReceipt(toUpload, `${expense.category}-${expense.date}`);
         const updated = { ...expense, receiptUrl };
-        await Sheets.updateExpense(this.sheetId, updated);
+        await this._dbUpdate(updated);
         const idx = this.expenses.findIndex((e) => e.id === expense.id);
         if (idx >= 0) this.expenses.splice(idx, 1, updated);
         this.selectedExpense = updated;
@@ -622,7 +753,7 @@ function appData() {
       if (!this.selectedExpense) return;
       this.isDeleting = true;
       try {
-        await Sheets.deleteExpense(this.sheetId, this.selectedExpense.id);
+        await this._dbDelete(this.selectedExpense.id);
         this.expenses = this.expenses.filter((e) => e.id !== this.selectedExpense.id);
         this.closeDetail();
         this.showToast('Expense deleted.', 'success');
@@ -851,11 +982,13 @@ function appData() {
       localStorage.setItem('et_settings', JSON.stringify({
         defaultCurrency: this.defaultCurrency,
         receiptUpload: this.receiptUploadEnabled,
+        appMode: this.appMode,
       }));
       // Keep ?cfg= URL in sync so bookmarked URL stays accurate.
-      const clientId = localStorage.getItem('et_client_id') || '';
-      const sheetId  = localStorage.getItem('et_sheet_id')  || '';
-      const newUrl   = this._buildConfigUrl(clientId || null, sheetId || null, this.defaultCurrency || null, this.receiptUploadEnabled);
+      const clientId  = localStorage.getItem('et_client_id')  || '';
+      const sheetId   = localStorage.getItem('et_sheet_id')   || '';
+      const scriptUrl = localStorage.getItem('et_script_url') || '';
+      const newUrl    = this._buildConfigUrl(clientId || null, sheetId || null, this.defaultCurrency || null, this.receiptUploadEnabled, scriptUrl || null);
       window.history.replaceState(null, '', newUrl);
       this.showToast('Settings saved.', 'success');
     },

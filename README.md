@@ -12,13 +12,38 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
 - Multi-currency support — enter a currency per expense or set a default (e.g. ARS, USD, EUR)
 - Search, filter, and sort your expense history
 - Dashboard with monthly totals, category breakdown chart, and 6-month trend
-- All data lives in a Google Sheet you own — readable and editable without the app
-- Optional: attach receipt photos or PDFs, stored in your Google Drive
+- All data lives in a Google Sheet you own — one tab per month, human-readable dates
+- Optional: attach receipt photos or PDFs, stored in your Google Drive (OAuth modes only)
 - Works as an installable PWA (add to home screen)
+- **No Google account required** — use the Apps Script mode for a simpler setup
 
 ---
 
-## Setup
+## Setup modes
+
+The app supports three ways to connect to your data. Choose the one that fits your situation when you first open the app.
+
+### Option A — Create a new sheet (recommended for most users)
+
+Uses Google OAuth. The app creates an `ExpenseTracker` spreadsheet in your Google Drive and manages it for you. Receipt upload is available.
+
+**Requires:** A Google Cloud project with Sheets API enabled and an OAuth Client ID.
+
+### Option B — Connect an existing sheet
+
+Uses Google OAuth. Point the app at a spreadsheet you already created. Receipt upload is disabled for this mode.
+
+**Requires:** Same as Option A, plus an existing spreadsheet URL.
+
+### Option C — No Google account needed (Apps Script)
+
+No OAuth, no Google Cloud Console. Instead, a small Google Apps Script runs as a web app and acts as the API. You copy-paste a script into Google Sheets once, deploy it, and paste the URL into the app. The guided wizard walks you through every step.
+
+**Requires:** A Google account to access Google Sheets (no Cloud Console or OAuth credentials needed).
+
+---
+
+## Setup — Option A & B (OAuth)
 
 ### 1. Google Cloud Project
 
@@ -26,7 +51,7 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
 2. Create a new project (e.g. `expense-tracker`)
 3. Enable these APIs:
    - **Google Sheets API** (search "Sheets API")
-   - **Google Drive API** — only needed if you plan to use receipt upload
+   - **Google Drive API** — only needed if you plan to use receipt upload (Option A only)
 
 ### 2. OAuth 2.0 Credentials
 
@@ -40,19 +65,7 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
 
 > **Note:** The OAuth Client ID is not a secret — it only works from origins you explicitly register in Google Cloud Console.
 
-### 3. Generate PNG icons (optional, for install prompt)
-
-The app includes an SVG icon (`assets/icon.svg`). To generate PNG icons for the web app manifest, run:
-
-```bash
-# If you have Inkscape:
-inkscape assets/icon.svg --export-png=assets/icon-192.png --export-width=192
-inkscape assets/icon.svg --export-png=assets/icon-512.png --export-width=512
-
-# Or use any image converter (ImageMagick, online tools, etc.)
-```
-
-### 4. Deploy to GitHub Pages
+### 3. Deploy to GitHub Pages
 
 1. Push this repository to GitHub
 2. Go to **Settings → Pages**
@@ -60,14 +73,38 @@ inkscape assets/icon.svg --export-png=assets/icon-512.png --export-width=512
 4. Choose `main` branch, `/ (root)` folder
 5. Save — your app will be live at `https://YOUR_USERNAME.github.io/expense-tracker/`
 
-### 5. First run
+### 4. First run (Option A)
 
 1. Open your GitHub Pages URL
-2. A one-time **Setup** screen appears — paste your OAuth Client ID and optionally set a default currency (e.g. `ARS`) and enable receipt upload
-3. After saving, your browser URL updates to include your config as a `?cfg=` parameter — **bookmark this URL** so your setup is restored automatically if browser storage is cleared
-4. Click **Sign in with Google** and grant the requested permissions
+2. A one-time **Setup** screen appears — choose **"Create new sheet for me"**
+3. Paste your OAuth Client ID and optionally set a default currency (e.g. `ARS`)
+4. Click **Save & Continue**, then **Sign in with Google** and grant the requested permissions
 5. The app creates an `ExpenseTracker` spreadsheet in your Google Drive automatically
-6. Start adding expenses!
+6. After setup, your browser URL updates to include your config as a `?cfg=` parameter — **bookmark this URL** so your setup is restored automatically if browser storage is cleared
+7. Start adding expenses!
+
+### 4. First run (Option B)
+
+1. Open your GitHub Pages URL
+2. Choose **"Connect existing sheet"** in the Setup screen
+3. Paste your OAuth Client ID, a default currency, and the full URL of your existing spreadsheet
+4. Click **Save & Continue**, then sign in
+5. The app will read and write to the spreadsheet you provided
+
+---
+
+## Setup — Option C (Apps Script, no OAuth)
+
+The in-app wizard guides you through each step. Here is what it does:
+
+1. **Create a Google Sheet** — go to [sheets.new](https://sheets.new), give it any name
+2. **Open the script editor** — in the sheet, go to **Extensions → Apps Script**, then paste the script the wizard shows you (it's pre-generated, just copy and paste)
+3. **Deploy as a web app** — click **Deploy → New deployment**, choose **Web app**, set **Execute as: Me** and **Who has access: Anyone**, click **Deploy**, and copy the web app URL
+4. **Connect** — paste the URL into the wizard and click **Verify & Save**
+
+The app pings the script URL to confirm it works before saving. Once connected, all reads and writes go through the script — no OAuth, no Google Cloud Console.
+
+> **Note:** The Apps Script URL acts like an API key. Anyone with it can read and write your expenses. Keep the bookmarked URL private.
 
 ---
 
@@ -82,18 +119,20 @@ python3 -m http.server 8080
 
 Then open `http://localhost:8080`.
 
-> **Important:** Use `http://localhost:8080` specifically (or another port you've added as an authorized origin in Google Cloud Console). The GIS OAuth flow requires a registered origin.
+> **Important for OAuth modes:** Use `http://localhost:8080` specifically (or another port you've added as an authorized origin in Google Cloud Console). The GIS OAuth flow requires a registered origin. The Apps Script mode has no such restriction.
 
 ---
 
 ## Data structure
 
-Each expense is one row in your `ExpenseTracker` Google Sheet:
+Data is stored in your `ExpenseTracker` Google Sheet with **one tab per calendar month** (e.g. `Jun 2026`, `Jul 2026`). Tabs are created automatically when the first expense is logged for that month.
+
+Each expense is one row:
 
 | Column | Example | Notes |
 |--------|---------|-------|
 | ID | `a1b2-c3d4-…` | UUID, auto-generated |
-| Date | `2026-06-22` | ISO 8601 format |
+| Date | `Jun 22, 2026` | Human-readable |
 | Amount | `24.50` | Decimal |
 | Currency | `USD` | 3-letter code |
 | Category | `Food & Dining` | From preset list |
@@ -102,27 +141,39 @@ Each expense is one row in your `ExpenseTracker` Google Sheet:
 | Receipt URL | `https://drive.google.com/…` | Google Drive link, optional |
 | Created At | `2026-06-22T09:15:00.000Z` | ISO timestamp |
 
-You can add columns to the right without breaking the app. The app reads columns by header name, not position.
+The app reads columns by **header name, not position** — you can reorder or add columns to the right without breaking anything.
 
 ---
 
 ## Receipt attachments
 
-Receipt upload is **opt-in** — enable it in the Setup screen or Settings. When enabled, the app requests the `drive.file` scope and uploads receipts to `ExpenseTracker/Receipts/` in your Google Drive. The app can only access files it creates itself. The Google Drive link is stored in the sheet as a clickable URL.
+Receipt upload is **opt-in** and only available in **Option A (Create new sheet)**. When enabled, the app requests the `drive.file` scope and uploads receipts to `ExpenseTracker/Receipts/` in your Google Drive. The app can only access files it creates itself. The Google Drive link is stored in the sheet as a clickable URL.
 
 Images are compressed client-side (max 1600px, JPEG 82% quality) before upload to keep sizes reasonable on mobile.
 
-If you don't need receipts, leave the option off — the app works fully without Drive access.
+---
+
+## Generate PNG icons (optional, for install prompt)
+
+The app includes an SVG icon (`assets/icon.svg`). To generate PNG icons for the web app manifest, run:
+
+```bash
+# If you have Inkscape:
+inkscape assets/icon.svg --export-png=assets/icon-192.png --export-width=192
+inkscape assets/icon.svg --export-png=assets/icon-512.png --export-width=512
+
+# Or use any image converter (ImageMagick, online tools, etc.)
+```
 
 ---
 
 ## Privacy & security
 
-- The OAuth Client ID is not a secret — it only works from origins you register in Google Cloud Console
-- Your Client ID is stored in your browser's `localStorage` and encoded into the bookmarkable `?cfg=` URL — it never touches the app's source code or any server
-- The access token is stored in `sessionStorage` (cleared when you close the tab)
-- The app never sends your data anywhere except Google's own APIs
-- All expense data and receipts live in **your** Google account
+- **OAuth modes:** The Client ID is not a secret — it only works from origins you register in Google Cloud Console. The access token is stored in `sessionStorage` (cleared when you close the tab).
+- **Apps Script mode:** The script URL is the only credential. Treat the bookmarked `?cfg=` URL as private.
+- Your config is encoded into the `?cfg=` URL parameter as base64 — it never touches the app's source code or any server.
+- The app never sends your data anywhere except Google's own APIs (Sheets, Drive, or your Apps Script).
+- All expense data and receipts live in **your** Google account.
 
 ---
 
@@ -130,7 +181,8 @@ If you don't need receipts, leave the option off — the app works fully without
 
 - [Alpine.js](https://alpinejs.dev/) v3 — reactive UI, no build step
 - [Chart.js](https://www.chartjs.org/) v4 — dashboard charts
-- [Google Identity Services](https://developers.google.com/identity/oauth2/web/guides/overview) — OAuth 2.0
-- [Google Sheets API v4](https://developers.google.com/sheets/api) — data storage
-- [Google Drive API v3](https://developers.google.com/drive/api) — receipt storage
+- [Google Identity Services](https://developers.google.com/identity/oauth2/web/guides/overview) — OAuth 2.0 (Options A & B)
+- [Google Sheets API v4](https://developers.google.com/sheets/api) — data storage (Options A & B)
+- [Google Drive API v3](https://developers.google.com/drive/api) — receipt storage (Option A)
+- [Google Apps Script](https://developers.google.com/apps-script) — serverless backend (Option C)
 - Custom CSS design system — no frameworks

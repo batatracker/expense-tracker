@@ -106,6 +106,7 @@
 <script src="js/auth.js"></script>
 <script src="js/sheets.js"></script>
 <script src="js/drive.js"></script>
+<script src="js/appscript.js"></script>
 <script src="js/app.js"></script>
 
 <!-- ================================================================
@@ -121,7 +122,7 @@
 
   <!-- ============================================================
        FIRST-RUN SETUP SCREEN
-       Shown when no Google Client ID is configured.
+       Step 1: pick mode.  Step 2: enter credentials.
        The Client ID is stored in localStorage — never in source code.
        ============================================================ -->
   <div class="signin-screen" x-show="!isInitializing && isSetupNeeded">
@@ -135,25 +136,75 @@
       </svg>
     </div>
     <h1 class="signin-title">One-time Setup</h1>
-    <p class="signin-subtitle">Paste your Google OAuth Client ID below. It stays in your browser only — never in the app's source code.</p>
 
-    <div class="signin-card" style="max-width:360px">
-      <!-- Steps -->
-      <ol style="list-style:none;counter-reset:steps;margin-bottom:var(--sp-5)">
-        <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
-          <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">1</span>
-          Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" style="color:var(--clr-primary);font-weight:600">&nbsp;Google Cloud Console&nbsp;</a> → Create credentials → OAuth 2.0 Client ID (Web app)
-        </li>
-        <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
-          <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">2</span>
-          Add this page's URL as an Authorized JavaScript origin
-        </li>
-        <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
-          <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">3</span>
-          Paste the Client ID below
-        </li>
-      </ol>
+    <!-- ── Step 1: mode selection ── -->
+    <div x-show="!setupMode" style="width:100%;max-width:380px">
+      <p class="signin-subtitle" style="margin-bottom:var(--sp-5)">How do you want to store your expenses?</p>
 
+      <button class="setup-mode-card" @click="setupMode='fresh'">
+        <div class="setup-mode-icon" style="background:var(--clr-primary-light);color:var(--clr-primary)">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <div class="setup-mode-body">
+          <div class="setup-mode-title">Create a new sheet for me</div>
+          <div class="setup-mode-desc">The app creates an <em>ExpenseTracker</em> spreadsheet in your Google Drive automatically. Receipt upload also available.</div>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chevron-right"/></svg>
+      </button>
+
+      <button class="setup-mode-card" @click="setupMode='existing'">
+        <div class="setup-mode-icon" style="background:#ECFDF5;color:#059669">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </div>
+        <div class="setup-mode-body">
+          <div class="setup-mode-title">Connect an existing sheet</div>
+          <div class="setup-mode-desc">Paste a link to a Google Sheet you already have. Receipt upload is not available in this mode.</div>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chevron-right"/></svg>
+      </button>
+
+      <button class="setup-mode-card" @click="setupMode='appscript'; setupStep=1">
+        <div class="setup-mode-icon" style="background:#F0FDF4;color:#16A34A">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="setup-mode-body">
+          <div class="setup-mode-title">Use without signing in <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;background:#DCFCE7;color:#15803D;border-radius:99px;letter-spacing:.03em;vertical-align:middle;margin-left:4px">NO OAUTH</span></div>
+          <div class="setup-mode-desc">No Google Cloud Console, no OAuth permissions. Paste a small script into your sheet once. Guided 4-step setup.</div>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chevron-right"/></svg>
+      </button>
+
+      <p style="font-size:12px;color:var(--clr-text-3);text-align:center;margin-top:var(--sp-4);line-height:1.5">
+        The first two options require a <strong>Google OAuth Client ID</strong> from Google Cloud Console.<br>
+        The third option skips all of that.
+      </p>
+    </div>
+
+    <!-- ── Step 2: credential form ── -->
+    <div x-show="setupMode" class="signin-card" style="max-width:380px">
+      <button class="btn btn-ghost" style="margin-bottom:var(--sp-4);padding:0;font-size:13px;color:var(--clr-text-2)" @click="setupMode=null; setupErrors={}; setupStep=1">
+        ← Back
+      </button>
+
+      <!-- Instructions for fresh mode -->
+      <div x-show="setupMode === 'fresh'" style="margin-bottom:var(--sp-5)">
+        <ol style="list-style:none;counter-reset:steps">
+          <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
+            <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">1</span>
+            Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" style="color:var(--clr-primary);font-weight:600">&nbsp;Google Cloud Console&nbsp;</a> → Create credentials → OAuth 2.0 Client ID (Web app)
+          </li>
+          <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
+            <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">2</span>
+            Add this page's URL as an Authorized JavaScript origin
+          </li>
+          <li style="counter-increment:steps;display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-2) 0;font-size:13px;color:var(--clr-text-2)">
+            <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--clr-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">3</span>
+            Paste the Client ID below
+          </li>
+        </ol>
+      </div>
+
+      <!-- Client ID field (both modes) -->
       <div style="margin-bottom:var(--sp-4)">
         <label class="form-label" for="setup-client-id">Google OAuth Client ID</label>
         <input id="setup-client-id" type="text" class="form-input"
@@ -163,52 +214,126 @@
                autocomplete="off" spellcheck="false">
         <div class="form-error" x-show="setupErrors.clientId" x-text="setupErrors.clientId"></div>
         <p style="font-size:11px;color:var(--clr-text-3);margin-top:var(--sp-2)">
-          The Client ID is not a secret — it only works from origins you authorise in Google Cloud Console.
+          Not a secret — it only works from origins you authorise in Google Cloud Console.
         </p>
       </div>
 
-      <div style="margin-bottom:var(--sp-5)">
+      <!-- Sheet URL field (existing mode only) -->
+      <div x-show="setupMode === 'existing'" style="margin-bottom:var(--sp-4)">
+        <label class="form-label" for="setup-sheet-url">Google Sheet URL or ID</label>
+        <input id="setup-sheet-url" type="text" class="form-input"
+               :class="{error: setupErrors.spreadsheetUrl}"
+               x-model="setupForm.spreadsheetUrl"
+               placeholder="https://docs.google.com/spreadsheets/d/…"
+               autocomplete="off" spellcheck="false">
+        <div class="form-error" x-show="setupErrors.spreadsheetUrl" x-text="setupErrors.spreadsheetUrl"></div>
+        <div style="display:flex;align-items:flex-start;gap:var(--sp-2);margin-top:var(--sp-3);padding:var(--sp-3);background:#FFF7ED;border-radius:var(--radius-md);border:1px solid #FED7AA">
+          <span style="font-size:14px;flex-shrink:0">⚠️</span>
+          <p style="font-size:12px;color:#92400E;margin:0;line-height:1.5">Receipt upload (Google Drive) is not available when connecting to an existing sheet.</p>
+        </div>
+      </div>
+
+      <!-- Default currency (oauth modes only) -->
+      <div x-show="setupMode !== 'appscript'" style="margin-bottom:var(--sp-5)">
         <label class="form-label" for="setup-default-currency">Default Currency <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
         <input id="setup-default-currency" type="text" class="form-input"
                x-model="setupForm.defaultCurrency"
-               placeholder="e.g. ARS, USD, EUR — leave blank to enter per expense"
+               placeholder="ARS, USD, EUR — leave blank to enter per expense"
                maxlength="3" style="text-transform:uppercase"
                @input="setupForm.defaultCurrency = setupForm.defaultCurrency.toUpperCase()">
-        <p style="font-size:11px;color:var(--clr-text-3);margin-top:var(--sp-2)">
-          Used as the default for new expenses. You can change this later in Settings.
-        </p>
       </div>
 
-      <div style="margin-bottom:var(--sp-5)">
-        <label style="display:flex;align-items:center;gap:var(--sp-3);cursor:pointer">
-          <input type="checkbox" x-model="setupForm.receiptUpload"
-                 style="width:18px;height:18px;accent-color:var(--clr-primary);flex-shrink:0">
-          <span>
-            <span style="font-size:14px;font-weight:600;color:var(--clr-text-1)">Enable receipt upload</span><br>
-            <span style="font-size:12px;color:var(--clr-text-3)">Stores photos/PDFs in Google Drive. Leave off for spreadsheet-only use.</span>
-          </span>
-        </label>
-      </div>
+      <!-- AppScript wizard -->
+      <div x-show="setupMode === 'appscript'">
 
-      <div style="margin-bottom:var(--sp-4)">
-        <details style="font-size:12px;color:var(--clr-text-3)">
-          <summary style="cursor:pointer;font-weight:600;color:var(--clr-text-2);margin-bottom:var(--sp-2)">Already have a Google Sheet? (optional)</summary>
-          <label class="form-label" for="setup-sheet-id" style="margin-top:var(--sp-2)">Sheet ID</label>
-          <input id="setup-sheet-id" type="text" class="form-input"
-                 x-model="setupForm.sheetId"
-                 placeholder="Paste the ID from the Sheet's URL"
-                 style="font-size:13px"
-                 autocomplete="off" spellcheck="false">
-          <p style="margin-top:var(--sp-2)">The long string in <code style="background:var(--clr-surface-2);padding:1px 5px;border-radius:4px">docs.google.com/spreadsheets/d/<strong>THIS_PART</strong>/edit</code></p>
-        </details>
-      </div>
+        <!-- Step 1: Create spreadsheet -->
+        <div x-show="setupStep === 1">
+          <div style="margin-bottom:var(--sp-4)">
+            <div style="font-size:13px;font-weight:700;color:var(--clr-text-1);margin-bottom:var(--sp-2)">Step 1 of 4 — Create your spreadsheet</div>
+            <p style="font-size:13px;color:var(--clr-text-2);line-height:1.55;margin-bottom:var(--sp-3)">Go to Google Sheets and create a blank spreadsheet. Give it any name.</p>
+            <a href="https://sheets.new" target="_blank" rel="noopener" class="btn btn-secondary btn-full" style="display:flex;align-items:center;justify-content:center;gap:var(--sp-2);text-decoration:none;margin-bottom:var(--sp-3)">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Open Google Sheets
+            </a>
+            <p style="font-size:12px;color:var(--clr-text-3);line-height:1.5">Once created, come back here.</p>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" @click="setupStep=2">Next →</button>
+          </div>
+        </div>
 
-      <button class="btn btn-primary btn-full" @click="saveSetup()">
+        <!-- Step 2: Add the script -->
+        <div x-show="setupStep === 2">
+          <div style="margin-bottom:var(--sp-4)">
+            <div style="font-size:13px;font-weight:700;color:var(--clr-text-1);margin-bottom:var(--sp-2)">Step 2 of 4 — Add the script</div>
+            <p style="font-size:13px;color:var(--clr-text-2);line-height:1.55;margin-bottom:var(--sp-3)">In your spreadsheet, open <strong>Extensions → Apps Script</strong>. Delete any existing code and paste this:</p>
+            <pre style="background:#1E1E2E;color:#CDD6F4;font-size:11px;font-family:monospace;padding:var(--sp-3);border-radius:var(--radius-md);overflow:auto;max-height:180px;white-space:pre;margin-bottom:var(--sp-3)" x-text="AppScript.SCRIPT_SOURCE"></pre>
+            <button class="btn btn-secondary btn-sm" style="margin-bottom:var(--sp-3)"
+                    @click="navigator.clipboard.writeText(AppScript.SCRIPT_SOURCE).then(() => { $el.textContent='Copied!'; setTimeout(() => $el.textContent='Copy Script', 1500) })">Copy Script</button>
+            <p style="font-size:12px;color:var(--clr-text-3);line-height:1.5">Click the 💾 Save icon in Apps Script to save.</p>
+          </div>
+          <div style="display:flex;gap:var(--sp-3);justify-content:space-between">
+            <button class="btn btn-ghost" @click="setupStep=1">← Back</button>
+            <button class="btn btn-primary" @click="setupStep=3">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Deploy as web app -->
+        <div x-show="setupStep === 3">
+          <div style="margin-bottom:var(--sp-4)">
+            <div style="font-size:13px;font-weight:700;color:var(--clr-text-1);margin-bottom:var(--sp-2)">Step 3 of 4 — Deploy as web app</div>
+            <ol style="padding-left:var(--sp-5);font-size:13px;color:var(--clr-text-2);line-height:1.7">
+              <li>In Apps Script, click <strong>Deploy → New deployment</strong></li>
+              <li>Click the ⚙ gear next to "Select type" → choose <strong>Web app</strong></li>
+              <li>Set "Execute as" to <strong>Me</strong> (your Google account)</li>
+              <li>Set "Who has access" to <strong>Anyone</strong></li>
+              <li>Click <strong>Deploy</strong> and authorize when prompted</li>
+              <li>Copy the deployment URL — it starts with <code style="font-size:11px;background:var(--clr-surface-2);padding:1px 4px;border-radius:3px">https://script.google.com/macros/s/…/exec</code></li>
+            </ol>
+          </div>
+          <div style="display:flex;gap:var(--sp-3);justify-content:space-between">
+            <button class="btn btn-ghost" @click="setupStep=2">← Back</button>
+            <button class="btn btn-primary" @click="setupStep=4">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Connect -->
+        <div x-show="setupStep === 4">
+          <div style="font-size:13px;font-weight:700;color:var(--clr-text-1);margin-bottom:var(--sp-3)">Step 4 of 4 — Connect</div>
+          <div style="margin-bottom:var(--sp-4)">
+            <label class="form-label" for="setup-script-url">Deployment URL</label>
+            <input id="setup-script-url" type="url" class="form-input"
+                   :class="{error: setupErrors.scriptUrl}"
+                   x-model="setupForm.scriptUrl"
+                   placeholder="https://script.google.com/macros/s/…/exec"
+                   autocomplete="off" spellcheck="false">
+            <div class="form-error" x-show="setupErrors.scriptUrl" x-text="setupErrors.scriptUrl"></div>
+          </div>
+          <div style="margin-bottom:var(--sp-5)">
+            <label class="form-label" for="setup-appscript-currency">Default Currency <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+            <input id="setup-appscript-currency" type="text" class="form-input"
+                   x-model="setupForm.defaultCurrency"
+                   placeholder="ARS, USD, EUR — leave blank to enter per expense"
+                   maxlength="3" style="text-transform:uppercase"
+                   @input="setupForm.defaultCurrency = setupForm.defaultCurrency.toUpperCase()">
+          </div>
+          <div style="display:flex;gap:var(--sp-3);justify-content:space-between">
+            <button class="btn btn-ghost" @click="setupStep=3">← Back</button>
+            <button class="btn btn-primary" @click="verifyScript()" :disabled="setupVerifying">
+              <span x-show="!setupVerifying">Verify &amp; Save</span>
+              <span x-show="setupVerifying">Verifying…</span>
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /appscript wizard -->
+
+      <button class="btn btn-primary btn-full" x-show="setupMode !== 'appscript'" @click="saveSetup()" style="margin-top:var(--sp-2)">
         Save &amp; Continue
       </button>
-      <p style="margin-top:var(--sp-3);font-size:12px;color:var(--clr-text-3);text-align:center;line-height:1.5">
-        After saving, your browser URL will update to include your config.<br>
-        <strong>Bookmark that URL</strong> — it restores your setup automatically if browser storage is cleared.
+      <p x-show="setupMode !== 'appscript'" style="margin-top:var(--sp-3);font-size:12px;color:var(--clr-text-3);text-align:center;line-height:1.5">
+        After saving, your URL will include your config.<br>
+        <strong>Bookmark it</strong> — it restores setup if browser storage is cleared.
       </p>
     </div>
   </div>
@@ -256,6 +381,39 @@
        MAIN APP
        ============================================================ -->
   <div class="app-shell" x-show="!isInitializing && !isSetupNeeded && isAuthenticated">
+
+    <!-- Desktop sidebar nav (hidden on mobile via CSS) -->
+    <nav class="sidebar-nav" role="navigation" aria-label="Main navigation">
+      <div class="sidebar-brand">
+        <svg width="28" height="28" viewBox="0 0 36 36" fill="none" style="flex-shrink:0">
+          <rect x="4" y="8" width="28" height="20" rx="3" fill="var(--clr-primary)" fill-opacity="0.12"/>
+          <rect x="4" y="8" width="28" height="6" rx="3" fill="var(--clr-primary)"/>
+          <circle cx="11" cy="22" r="3" fill="var(--clr-primary)" fill-opacity="0.6"/>
+          <rect x="17" y="20" width="11" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.4"/>
+          <rect x="17" y="23" width="7" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.3"/>
+        </svg>
+        <span class="sidebar-brand-name">Expenses</span>
+      </div>
+      <button class="sidebar-add-btn" @click="navigate('add')">
+        <svg width="15" height="15"><use href="#icon-plus"/></svg>
+        Add Expense
+      </button>
+      <div class="sidebar-nav-items">
+        <button class="sidebar-nav-item" :class="{active: currentView === 'dashboard'}" @click="navigate('dashboard')">
+          <svg width="18" height="18"><use href="#icon-dashboard"/></svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="sidebar-nav-item" :class="{active: currentView === 'expenses'}" @click="navigate('expenses')">
+          <svg width="18" height="18"><use href="#icon-list"/></svg>
+          <span>Expenses</span>
+        </button>
+      </div>
+      <div style="flex:1"></div>
+      <button class="sidebar-nav-item" :class="{active: currentView === 'settings'}" @click="navigate('settings')">
+        <svg width="18" height="18"><use href="#icon-settings"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
 
     <!-- Toast -->
     <div class="toast-wrap" x-show="toastVisible"
@@ -341,19 +499,21 @@
           <!-- Charts (only when data available) -->
           <template x-if="!isLoading">
             <div>
-              <!-- Category breakdown -->
-              <div class="chart-card">
-                <div class="chart-title">Spending by Category</div>
-                <div class="chart-wrap">
-                  <canvas id="category-chart"></canvas>
+              <div class="dash-charts-grid">
+                <!-- Category breakdown -->
+                <div class="chart-card">
+                  <div class="chart-title">Spending by Category</div>
+                  <div class="chart-wrap">
+                    <canvas id="category-chart"></canvas>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Monthly trend -->
-              <div class="chart-card">
-                <div class="chart-title">6-Month Trend</div>
-                <div class="chart-wrap">
-                  <canvas id="trend-chart"></canvas>
+                <!-- Monthly trend -->
+                <div class="chart-card">
+                  <div class="chart-title">6-Month Trend</div>
+                  <div class="chart-wrap">
+                    <canvas id="trend-chart"></canvas>
+                  </div>
                 </div>
               </div>
 
@@ -525,9 +685,9 @@
           <div class="form-row">
             <div class="form-group flex-1">
               <label class="form-label" for="amount">Amount <span class="text-danger">*</span></label>
-              <div class="amount-input-wrap">
-                <span class="amount-currency-prefix" x-text="form.currency || defaultCurrency"></span>
-                <input id="amount" type="number" class="form-input" :class="{error: formErrors.amount}"
+              <div class="amount-input-group" :class="{error: formErrors.amount}">
+                <span class="amount-currency-badge" x-text="form.currency || defaultCurrency || '¤'"></span>
+                <input id="amount" type="number" class="amount-number-input"
                        x-model="form.amount" @input="formDirty=true" @change="formDirty=true"
                        placeholder="0.00" step="0.01" min="0" inputmode="decimal"
                        aria-required="true" :aria-invalid="!!formErrors.amount">
@@ -736,14 +896,14 @@
           <div class="settings-section">
             <div class="settings-section-title">Account</div>
             <div class="settings-card">
-              <!-- Google Client ID (masked) -->
+              <!-- Google Client ID / Script URL (masked) -->
               <div class="settings-row" @click="clearClientId()" role="button" tabindex="0" @keydown.enter="clearClientId()">
                 <div class="settings-row-icon" style="background:#F5F3FF;color:#6D28D9">
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 <div class="settings-row-text">
-                  <div class="settings-row-title">Google Client ID</div>
-                  <div class="settings-row-desc" x-text="maskedClientId || '(not set)'"></div>
+                  <div class="settings-row-title" x-text="appMode === 'appscript' ? 'Script URL' : 'Google Client ID'"></div>
+                  <div class="settings-row-desc" x-text="appMode === 'appscript' ? (maskedScriptUrl || '(not set)') : (maskedClientId || '(not set)')"></div>
                 </div>
                 <div class="settings-row-action" style="font-size:11px;color:var(--clr-danger)">Remove</div>
               </div>

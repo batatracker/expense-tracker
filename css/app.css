@@ -304,6 +304,26 @@ a { color: inherit; text-decoration: none; }
 }
 .signin-features li svg { flex-shrink: 0; margin-top: 1px; color: var(--clr-success); }
 
+/* Setup mode selection cards */
+.setup-mode-card {
+  display: flex; align-items: center; gap: var(--sp-4);
+  width: 100%; text-align: left;
+  padding: var(--sp-4);
+  background: var(--clr-surface); border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--sp-3);
+  cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.setup-mode-card:hover { border-color: var(--clr-primary); box-shadow: 0 0 0 3px var(--clr-primary-light); }
+.setup-mode-icon {
+  flex-shrink: 0; width: 44px; height: 44px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+}
+.setup-mode-body { flex: 1; }
+.setup-mode-title { font-size: 15px; font-weight: 600; color: var(--clr-text-1); margin-bottom: 2px; }
+.setup-mode-desc  { font-size: 12px; color: var(--clr-text-3); line-height: 1.5; }
+
 /* ---- Loading / Skeleton ---- */
 .loading-screen {
   min-height: 100dvh;
@@ -609,12 +629,47 @@ a { color: inherit; text-decoration: none; }
 .form-row .form-group { flex: 1; }
 .select-wrap { position: relative; }
 .select-wrap svg { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--clr-text-3); pointer-events: none; }
-.amount-input-wrap { position: relative; }
-.amount-currency-prefix {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-  font-size: 15px; font-weight: 600; color: var(--clr-text-3);
+
+/* Amount input group — badge + number field side by side, no overflow */
+.amount-input-group {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface);
+  overflow: hidden;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
 }
-.amount-input-wrap .form-input { padding-left: 36px; }
+.amount-input-group:focus-within {
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 3px var(--clr-primary-light);
+}
+.amount-input-group.error {
+  border-color: var(--clr-danger);
+  box-shadow: 0 0 0 3px var(--clr-danger-bg);
+}
+.amount-currency-badge {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 12px;
+  background: var(--clr-surface-2);
+  border-right: 1.5px solid var(--clr-border);
+  font-size: 13px; font-weight: 600;
+  color: var(--clr-text-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 46px;
+}
+.amount-number-input {
+  flex: 1; min-width: 0;
+  padding: 13px var(--sp-4);
+  background: transparent;
+  border: none; outline: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--clr-text);
+  appearance: none; -webkit-appearance: none;
+}
+.amount-number-input::placeholder { color: var(--clr-text-3); }
 
 /* ---- Receipt section ---- */
 .receipt-section {
@@ -903,10 +958,128 @@ a { color: inherit; text-decoration: none; }
 }
 .ptr-indicator.pulling { height: 44px; }
 
-/* Responsive: on wider screens, add a subtle card shadow to the whole shell */
-@media (min-width: 520px) {
+/* On mid-size screens, add a subtle phone-frame feel */
+@media (min-width: 520px) and (max-width: 767px) {
   .app-shell, .bottom-nav {
     border-left: 1px solid var(--clr-border);
     border-right: 1px solid var(--clr-border);
   }
+}
+
+/* ---- Sidebar nav (desktop only — hidden by default) ---- */
+.sidebar-nav { display: none; }
+
+.sidebar-brand {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-2) var(--sp-5);
+}
+.sidebar-brand-name { font-size: 15px; font-weight: 700; color: var(--clr-text); }
+
+.sidebar-add-btn {
+  display: flex; align-items: center; gap: var(--sp-2);
+  width: 100%; padding: 11px var(--sp-4);
+  margin-bottom: var(--sp-4);
+  border-radius: var(--r-md);
+  font-size: 14px; font-weight: 600;
+  background: var(--clr-primary);
+  color: white;
+  box-shadow: 0 3px 10px rgba(91,79,233,0.3);
+  transition: background var(--dur-fast), box-shadow var(--dur-fast);
+  cursor: pointer;
+}
+.sidebar-add-btn:hover { background: var(--clr-primary-hover); box-shadow: 0 4px 14px rgba(91,79,233,0.4); }
+
+.sidebar-nav-items { display: flex; flex-direction: column; gap: 2px; }
+
+.sidebar-nav-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  width: 100%; padding: 10px var(--sp-3);
+  border-radius: var(--r-md);
+  font-size: 14px; font-weight: 500;
+  color: var(--clr-text-2);
+  text-align: left; cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.sidebar-nav-item:hover { background: var(--clr-surface-2); color: var(--clr-text); }
+.sidebar-nav-item.active {
+  background: var(--clr-primary-light);
+  color: var(--clr-primary);
+  font-weight: 600;
+}
+
+/* ---- Dashboard charts grid (2-col on desktop, stacked on mobile) ---- */
+.dash-charts-grid { display: contents; } /* stack on mobile — each card is block */
+
+/* ================================================================
+   DESKTOP LAYOUT  (≥ 768 px)
+   ================================================================ */
+@media (min-width: 768px) {
+  /* Kill the mobile phone-frame feel; go full-width */
+  .app-shell {
+    flex-direction: row;
+    max-width: 100%;
+    margin: 0;
+    min-height: 100dvh;
+  }
+
+  /* Show sidebar, hide bottom nav */
+  .bottom-nav { display: none !important; }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    width: 220px;
+    min-width: 220px;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100dvh;
+    background: var(--clr-surface);
+    border-right: 1px solid var(--clr-border);
+    padding: var(--sp-5) var(--sp-4);
+    z-index: 200;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Main content pushed right of sidebar */
+  .view-container {
+    margin-left: 220px;
+    padding-bottom: var(--sp-10);
+    flex: 1;
+  }
+
+  /* Wider, centred content areas */
+  .dashboard-scroll { max-width: 960px; margin: 0 auto; padding: var(--sp-6); }
+  .form-page        { max-width: 640px; margin: 0 auto; }
+  .settings-page    { max-width: 640px; margin: 0 auto; }
+  .expense-list     { padding: var(--sp-4) var(--sp-6); }
+  .search-bar       { padding: var(--sp-4) var(--sp-6) 0; }
+  .sort-bar         { padding: var(--sp-3) var(--sp-6); }
+  .filter-panel     { margin: 0 var(--sp-6) var(--sp-3); }
+  .view-header      { padding: var(--sp-5) var(--sp-6); }
+
+  /* 2-column chart grid on dashboard */
+  .dash-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-4);
+  }
+  .dash-charts-grid .chart-card { margin-bottom: 0; }
+
+  /* Modals: wider on desktop */
+  .bottom-sheet { max-width: 560px; border-radius: var(--r-xl); bottom: 40px; }
+  .dialog       { max-width: 400px; }
+
+  /* Toast: anchor to right side of content area, not phone-bottom */
+  .toast-wrap {
+    left: calc(220px + var(--sp-5));
+    transform: none;
+    bottom: var(--sp-6);
+    max-width: 400px;
+    width: auto;
+    min-width: 280px;
+  }
+
+  /* View header: no sticky needed as much; keep it but flush */
+  .view-header h1 { font-size: 22px; }
 }
