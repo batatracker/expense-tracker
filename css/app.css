@@ -228,36 +228,54 @@ a { color: inherit; text-decoration: none; }
 .card-body-lg { padding: var(--sp-5) var(--sp-6); }
 
 /* ---- Sign-in screen ---- */
+/* ---- Sign-in / Setup wizard screen ---- */
 .signin-screen {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sp-6);
+  align-items: stretch;
+  position: relative;
   background: linear-gradient(160deg, #4338CA 0%, #5B4FE9 40%, #7C3AED 100%);
 }
-.signin-logo {
-  width: 72px; height: 72px;
-  background: rgba(255,255,255,0.18);
-  border-radius: var(--r-2xl);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: var(--sp-5);
-  border: 1.5px solid rgba(255,255,255,0.25);
-}
-.signin-title {
-  font-size: 28px;
-  font-weight: 800;
-  color: white;
-  letter-spacing: -0.5px;
-  margin-bottom: var(--sp-2);
+
+/* Brand panel: logo + title (+ feature list on desktop) */
+.wizard-brand-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+  padding: var(--sp-12) var(--sp-6) var(--sp-6);
+  flex-shrink: 0;
 }
+/* Feature bullets — desktop only */
+.wizard-brand-features { display: none; }
+
+/* Content panel: locale switcher + all form steps */
+.wizard-content-panel {
+  flex: 1;
+  background: var(--clr-surface);
+  border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: var(--sp-8) var(--sp-5) var(--sp-10);
+  overflow-y: auto;
+}
+
+/* Inner form width container */
+.wizard-form-inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Locale switcher — lives on the gradient brand panel */
 .wizard-locale-switcher {
   display: flex;
   gap: 6px;
   justify-content: center;
-  margin-bottom: var(--sp-5);
+  margin-top: var(--sp-4);
 }
 .wizard-locale-btn {
   font-size: 20px;
@@ -279,11 +297,128 @@ a { color: inherit; text-decoration: none; }
   background: rgba(255,255,255,0.25);
   opacity: 1;
 }
+
+/* signin-card inside content panel: no card chrome needed */
+.wizard-content-panel .signin-card {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  max-width: none;
+  box-shadow: none;
+  width: 100%;
+}
+
+/* Theme toggle button — fixed top-right, visible on all wizard screens */
+.wizard-theme-toggle {
+  position: fixed;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: background var(--dur-fast), transform var(--dur-fast), box-shadow var(--dur-fast);
+  background: rgba(255,255,255,0.92);
+  border: 1.5px solid rgba(0,0,0,0.08);
+  color: var(--clr-text);
+  box-shadow: var(--shadow-sm);
+}
+.wizard-theme-toggle:hover {
+  background: white;
+  box-shadow: var(--shadow-md);
+  transform: scale(1.06);
+}
+.wizard-theme-toggle:active { transform: scale(0.94); }
+
+/* Desktop: two-panel side by side */
+@media (min-width: 768px) {
+  .signin-screen { flex-direction: row; }
+
+  .wizard-brand-panel {
+    width: 40%;
+    min-height: 100dvh;
+    height: 100dvh;
+    padding: var(--sp-16) var(--sp-10);
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .wizard-brand-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 40%, rgba(255,255,255,0.1) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.5) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .wizard-content-panel {
+    width: 60%;
+    min-height: 100dvh;
+    border-radius: 0;
+    padding: var(--sp-10) var(--sp-16);
+    justify-content: center;
+  }
+  .wizard-form-inner { max-width: 440px; }
+
+  .wizard-brand-features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    margin-top: var(--sp-10);
+    text-align: left;
+    width: 100%;
+    max-width: 300px;
+    list-style: none;
+  }
+  .wizard-brand-features li {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+  }
+  .wizard-brand-features li svg { flex-shrink: 0; color: rgba(255,255,255,0.95); }
+
+  /* On desktop the toggle is over the white panel — adapt styling */
+  .wizard-theme-toggle {
+    background: var(--clr-surface-2);
+    border-color: var(--clr-border);
+    color: var(--clr-text-2);
+    box-shadow: var(--shadow-xs);
+  }
+  .wizard-theme-toggle:hover {
+    background: var(--clr-bg);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.signin-logo {
+  width: 72px; height: 72px;
+  background: rgba(255,255,255,0.18);
+  border-radius: var(--r-2xl);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--sp-5);
+  border: 1.5px solid rgba(255,255,255,0.25);
+}
+.signin-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.5px;
+  margin-bottom: var(--sp-2);
+  text-align: center;
+}
 .signin-subtitle {
   font-size: 15px;
   color: rgba(255,255,255,0.72);
   text-align: center;
-  margin-bottom: var(--sp-10);
   max-width: 280px;
   line-height: 1.55;
 }
@@ -292,7 +427,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: var(--r-2xl);
   padding: var(--sp-6);
   width: 100%;
-  max-width: 340px;
+  max-width: 380px;
   box-shadow: var(--shadow-xl);
 }
 .btn-google {
@@ -336,19 +471,19 @@ a { color: inherit; text-decoration: none; }
   width: 100%; text-align: left;
   padding: var(--sp-4);
   background: var(--clr-surface); border: 1.5px solid var(--clr-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-lg);
   margin-bottom: var(--sp-3);
   cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
 }
 .setup-mode-card:hover { border-color: var(--clr-primary); box-shadow: 0 0 0 3px var(--clr-primary-light); }
 .setup-mode-icon {
   flex-shrink: 0; width: 44px; height: 44px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-md);
   display: flex; align-items: center; justify-content: center;
 }
 .setup-mode-body { flex: 1; }
-.setup-mode-title { font-size: 15px; font-weight: 600; color: var(--clr-text-1); margin-bottom: 2px; }
-.setup-mode-desc  { font-size: 12px; color: var(--clr-text-3); line-height: 1.5; }
+.setup-mode-title { font-size: 15px; font-weight: 600; color: var(--clr-text); margin-bottom: 2px; }
+.setup-mode-desc  { font-size: 12px; color: var(--clr-text-2); line-height: 1.5; }
 
 /* ---- Loading / Skeleton ---- */
 .loading-screen {
@@ -1051,10 +1186,43 @@ a { color: inherit; text-decoration: none; }
 [data-theme="dark"] .signin-card {
   background: var(--clr-surface);
 }
+/* Inside wizard content panel, signin-card is already transparent */
+[data-theme="dark"] .wizard-content-panel .signin-card {
+  background: transparent;
+}
 [data-theme="dark"] .form-input::placeholder,
 [data-theme="dark"] .form-textarea::placeholder,
 [data-theme="dark"] .amount-number-input::placeholder,
 [data-theme="dark"] .search-input::placeholder { color: var(--clr-text-3); }
+
+/* Wizard signin-screen: muted dark gradient instead of jarring bright purple */
+[data-theme="dark"] .signin-screen {
+  background: linear-gradient(160deg, #16103E 0%, #1C1558 40%, #150F3C 100%);
+}
+[data-theme="dark"] .wizard-content-panel {
+  background: var(--clr-surface);
+}
+/* Theme toggle in dark mode */
+[data-theme="dark"] .wizard-theme-toggle {
+  background: rgba(255,255,255,0.88);
+  border-color: rgba(255,255,255,0.12);
+  color: #111827;
+  box-shadow: var(--shadow-sm);
+}
+[data-theme="dark"] .wizard-theme-toggle:hover {
+  background: rgba(255,255,255,0.96);
+}
+@media (min-width: 768px) {
+  [data-theme="dark"] .wizard-theme-toggle {
+    background: var(--clr-surface-2);
+    border-color: var(--clr-border);
+    color: var(--clr-text-2);
+  }
+  [data-theme="dark"] .wizard-theme-toggle:hover {
+    background: var(--clr-border);
+    color: var(--clr-text);
+  }
+}
 
 /* Setup wizard warning box */
 [data-theme="dark"] [style*="#FFF7ED"] {
@@ -1062,6 +1230,40 @@ a { color: inherit; text-decoration: none; }
   border-color: #7C4A00 !important;
 }
 [data-theme="dark"] [style*="#92400E"] { color: #FCD34D !important; }
+/* Mode card icons and NO OAUTH badge now use CSS variables — no overrides needed */
+[data-theme="dark"] .setup-mode-card:hover {
+  box-shadow: 0 0 0 3px rgba(91, 79, 233, 0.35);
+}
+
+/* Focus ring in dark mode: primary-light (#1D1A4A) is too dark, use a visible glow */
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] .form-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(91, 79, 233, 0.35);
+}
+
+/* In dark mode, surfaces that share --clr-surface with the wizard panel need elevation */
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-textarea {
+  background: var(--clr-surface-2);
+  border-color: var(--clr-border);
+}
+[data-theme="dark"] .setup-mode-card {
+  background: var(--clr-surface-2);
+}
+[data-theme="dark"] .btn-secondary {
+  background: var(--clr-surface-2);
+  border-color: var(--clr-border);
+}
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background: var(--clr-border);
+}
+/* amount input group background */
+[data-theme="dark"] .amount-input-group {
+  background: var(--clr-surface-2);
+  border-color: var(--clr-border);
+}
 
 /* Skeleton shimmer in dark mode */
 [data-theme="dark"] .skeleton {
@@ -1310,14 +1512,29 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   gap: var(--sp-3);
 }
-.debt-toggle-label {
-  display: flex;
+.debt-paid-toggle {
+  display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
+  padding: 5px 12px;
+  border-radius: var(--r-full);
+  border: 1.5px solid var(--clr-border);
+  background: var(--clr-surface);
   font-size: 13px;
+  font-weight: 500;
   color: var(--clr-text-2);
   cursor: pointer;
+  transition: border-color var(--dur-fast), background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
   user-select: none;
+}
+.debt-paid-toggle:hover {
+  border-color: var(--clr-primary);
+  color: var(--clr-text);
+}
+.debt-paid-toggle.active {
+  background: var(--clr-primary-light);
+  border-color: var(--clr-primary);
+  color: var(--clr-primary);
 }
 
 /* ---- Debt list ---- */
@@ -1411,8 +1628,16 @@ a { color: inherit; text-decoration: none; }
 .debt-entry {
   padding: var(--sp-3) var(--sp-4);
   border-bottom: 1px solid var(--clr-border);
+  transition: opacity var(--dur-fast);
 }
 .debt-entry:last-child { border-bottom: none; }
+/* Paid entries are visually dimmed to distinguish from active debts */
+.debt-entry.is-paid {
+  opacity: 0.45;
+}
+.debt-entry.is-paid:hover {
+  opacity: 0.75;
+}
 .debt-entry-header {
   display: flex;
   align-items: center;

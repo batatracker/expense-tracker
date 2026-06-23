@@ -177,28 +177,68 @@
        The Client ID is stored in localStorage — never in source code.
        ============================================================ -->
   <div class="signin-screen" x-show="!isInitializing && isSetupNeeded">
-    <div class="signin-logo">
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <rect x="4" y="8" width="28" height="20" rx="3" fill="white" fill-opacity="0.9"/>
-        <rect x="4" y="8" width="28" height="6" rx="3" fill="white"/>
-        <circle cx="11" cy="22" r="3" fill="#5B4FE9" fill-opacity="0.7"/>
-        <rect x="17" y="20" width="11" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.4"/>
-        <rect x="17" y="23" width="7" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.3"/>
-      </svg>
-    </div>
-    <h1 class="signin-title" x-text="t('setup.title')"></h1>
 
-    <!-- Locale switcher -->
-    <div class="wizard-locale-switcher">
-      <button class="wizard-locale-btn" :class="{active: _activeLocale === 'en-GB'}"
-              @click="switchLocale('en-GB')">🇬🇧</button>
-      <button class="wizard-locale-btn" :class="{active: _activeLocale === 'es-AR'}"
-              @click="switchLocale('es-AR')">🇦🇷</button>
+    <!-- Theme toggle: visible during setup, lets user pick before they're in the app -->
+    <button class="wizard-theme-toggle" @click="toggleDarkMode()"
+            :aria-label="darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
+            :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
+      <!-- Sun icon — shown in dark mode, click to go light -->
+      <svg x-show="darkMode" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <!-- Moon icon — shown in light mode, click to go dark -->
+      <svg x-show="!darkMode" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+
+    <!-- LEFT: Brand panel (compact header on mobile, full left column on desktop) -->
+    <div class="wizard-brand-panel">
+      <div class="signin-logo">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <rect x="4" y="8" width="28" height="20" rx="3" fill="white" fill-opacity="0.9"/>
+          <rect x="4" y="8" width="28" height="6" rx="3" fill="white"/>
+          <circle cx="11" cy="22" r="3" fill="#5B4FE9" fill-opacity="0.7"/>
+          <rect x="17" y="20" width="11" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.4"/>
+          <rect x="17" y="23" width="7" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.3"/>
+        </svg>
+      </div>
+      <h1 class="signin-title" x-text="t('setup.title')"></h1>
+      <p class="signin-subtitle" x-text="t('signin.subtitle')"></p>
+      <!-- Locale switcher — on gradient so the semi-transparent buttons feel at home -->
+      <div class="wizard-locale-switcher">
+        <button class="wizard-locale-btn" :class="{active: _activeLocale === 'en-GB'}"
+                @click="switchLocale('en-GB')">🇬🇧</button>
+        <button class="wizard-locale-btn" :class="{active: _activeLocale === 'es-AR'}"
+                @click="switchLocale('es-AR')">🇦🇷</button>
+      </div>
+      <!-- Feature bullets — only visible on desktop (CSS hides on mobile) -->
+      <ul class="wizard-brand-features">
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span x-text="t('signin.feature_history')"></span>
+        </li>
+        <li x-show="receiptUploadEnabled">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span x-text="t('signin.feature_receipts')"></span>
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span x-text="t('signin.feature_free')"></span>
+        </li>
+      </ul>
     </div>
+
+    <!-- RIGHT: Content panel (white/surface surface containing all form steps) -->
+    <div class="wizard-content-panel">
 
     <!-- ── Step 1: mode selection ── -->
-    <div x-show="!setupMode" style="width:100%;max-width:380px">
-      <p class="signin-subtitle" style="margin-bottom:var(--sp-5)" x-text="t('setup.how_to_store')"></p>
+    <div x-show="!setupMode" class="wizard-form-inner">
+      <p style="font-size:15px;color:var(--clr-text-2);margin-bottom:var(--sp-5);line-height:1.55" x-text="t('setup.how_to_store')"></p>
 
       <button class="setup-mode-card" @click="setupMode='fresh'; setupStep=1">
         <div class="setup-mode-icon" style="background:var(--clr-primary-light);color:var(--clr-primary)">
@@ -212,7 +252,7 @@
       </button>
 
       <button class="setup-mode-card" @click="setupMode='existing'; setupStep=1">
-        <div class="setup-mode-icon" style="background:#ECFDF5;color:#059669">
+        <div class="setup-mode-icon" style="background:var(--clr-success-bg);color:var(--clr-success)">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         </div>
         <div class="setup-mode-body">
@@ -223,11 +263,11 @@
       </button>
 
       <button class="setup-mode-card" @click="setupMode='appscript'; setupStep=1">
-        <div class="setup-mode-icon" style="background:#F0FDF4;color:#16A34A">
+        <div class="setup-mode-icon" style="background:var(--clr-success-bg);color:var(--clr-success)">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
         <div class="setup-mode-body">
-          <div class="setup-mode-title"><span x-text="t('setup.appscript.title')"></span> <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;background:#DCFCE7;color:#15803D;border-radius:99px;letter-spacing:.03em;vertical-align:middle;margin-left:4px">NO OAUTH</span></div>
+          <div class="setup-mode-title"><span x-text="t('setup.appscript.title')"></span> <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;background:var(--clr-success-bg);color:var(--clr-success);border-radius:99px;letter-spacing:.03em;vertical-align:middle;margin-left:4px;border:1px solid currentColor;opacity:0.85">NO OAUTH</span></div>
           <div class="setup-mode-desc">No Google Cloud Console, no OAuth permissions. Paste a small script into your sheet once. Guided 4-step setup.</div>
         </div>
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chevron-right"/></svg>
@@ -240,7 +280,7 @@
     </div>
 
     <!-- ── Step 2: credential form ── -->
-    <div x-show="setupMode" class="signin-card" style="max-width:380px">
+    <div x-show="setupMode" class="signin-card wizard-form-inner">
       <button class="btn btn-ghost" style="margin-bottom:var(--sp-4);padding:0;font-size:13px;color:var(--clr-text-2)" @click="setupMode=null; setupErrors={}; setupStep=1" x-text="t('setup.back')">
       </button>
 
@@ -425,24 +465,63 @@
 
       </div><!-- /appscript wizard -->
 
-    </div>
-  </div>
+    </div><!-- /signin-card wizard-form-inner -->
+    </div><!-- /wizard-content-panel -->
+  </div><!-- /signin-screen setup -->
 
   <!-- ============================================================
-       SIGN-IN SCREEN
+       SIGN-IN SCREEN (OAuth — after setup, not yet authenticated)
        ============================================================ -->
   <div class="signin-screen" x-show="!isInitializing && !isSetupNeeded && !isAuthenticated">
-    <div class="signin-logo">
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <rect x="4" y="8" width="28" height="20" rx="3" fill="white" fill-opacity="0.9"/>
-        <rect x="4" y="8" width="28" height="6" rx="3" fill="white"/>
-        <circle cx="11" cy="22" r="3" fill="#5B4FE9" fill-opacity="0.7"/>
-        <rect x="17" y="20" width="11" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.4"/>
-        <rect x="17" y="23" width="7" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.3"/>
+
+    <!-- Theme toggle -->
+    <button class="wizard-theme-toggle" @click="toggleDarkMode()"
+            :aria-label="darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
+            :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
+      <svg x-show="darkMode" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
       </svg>
+      <svg x-show="!darkMode" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+
+    <!-- Brand panel -->
+    <div class="wizard-brand-panel">
+      <div class="signin-logo">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <rect x="4" y="8" width="28" height="20" rx="3" fill="white" fill-opacity="0.9"/>
+          <rect x="4" y="8" width="28" height="6" rx="3" fill="white"/>
+          <circle cx="11" cy="22" r="3" fill="#5B4FE9" fill-opacity="0.7"/>
+          <rect x="17" y="20" width="11" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.4"/>
+          <rect x="17" y="23" width="7" height="2" rx="1" fill="#5B4FE9" fill-opacity="0.3"/>
+        </svg>
+      </div>
+      <h1 class="signin-title" x-text="t('signin.title')"></h1>
+      <p class="signin-subtitle" x-text="t('signin.subtitle')"></p>
+      <ul class="wizard-brand-features">
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span x-text="t('signin.feature_history')"></span>
+        </li>
+        <li x-show="receiptUploadEnabled">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span x-text="t('signin.feature_receipts')"></span>
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span x-text="t('signin.feature_free')"></span>
+        </li>
+      </ul>
     </div>
-    <h1 class="signin-title" x-text="t('signin.title')"></h1>
-    <p class="signin-subtitle" x-text="t('signin.subtitle')"></p>
+
+    <!-- Content panel -->
+    <div class="wizard-content-panel">
+      <div class="wizard-form-inner">
 
     <div class="signin-card">
       <button class="btn-google" @click="signIn()">
@@ -465,7 +544,9 @@
         </li>
       </ul>
     </div>
-  </div>
+      </div><!-- /wizard-form-inner -->
+    </div><!-- /wizard-content-panel -->
+  </div><!-- /signin-screen -->
 
   <!-- ============================================================
        MAIN APP
@@ -1467,10 +1548,11 @@
 
         <!-- Show paid toggle -->
         <div class="debt-filter-bar" x-show="debts.some(d => d.status === 'paid')">
-          <label class="debt-toggle-label">
-            <input type="checkbox" x-model="showPaidDebts" style="accent-color:var(--clr-primary);width:15px;height:15px">
+          <button class="debt-paid-toggle" :class="{active: showPaidDebts}" @click="showPaidDebts = !showPaidDebts">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" x-show="showPaidDebts"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-show="!showPaidDebts"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             <span x-text="t('debts.show_paid')"></span>
-          </label>
+          </button>
         </div>
 
         <!-- Empty state -->
@@ -1513,7 +1595,7 @@
               <!-- Individual debt entries -->
               <div class="debt-entries" x-show="_debtExpanded[group.sourceKey]">
                 <template x-for="debt in group.debts" :key="debt.id">
-                  <div class="debt-entry" x-show="showPaidDebts || debt.status !== 'paid'">
+                  <div class="debt-entry" :class="{'is-paid': debt.status === 'paid'}" x-show="showPaidDebts || debt.status !== 'paid'">
                     <!-- Paid badge -->
                     <div class="debt-entry-header">
                       <div class="debt-entry-amounts">
