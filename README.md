@@ -8,14 +8,31 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
 
 ## Features
 
-- Track expenses with amount, date, category, merchant, and notes
+**Expenses & income**
+- Track expenses with amount, date, category, merchant, notes, and optional receipt photo
+- Track income entries and reconciliation adjustments per month
+- Dashboard shows income, expenses, and running net balance side-by-side with semantic colors
+
+**Debts**
+- Log debts owed to creditors, track outstanding balance and due dates
+- Record partial payments; the dashboard shows total outstanding across all creditors
+
+**Dashboard**
+- Monthly totals, category breakdown chart, and 6-month spending trend
+- Responsive layout: three stat cards in a row on desktop, stacked on mobile
+- Period selector: This Month, Last Month, Last 3 Months, This Year, All Time
+
+**Data & privacy**
+- All data lives in a Google Sheet you own — one tab per month, human-readable dates
 - Multi-currency support — enter a currency per expense or set a default (e.g. ARS, USD, EUR)
 - Search, filter, and sort your expense history
-- Dashboard with monthly totals, category breakdown chart, and 6-month trend
-- All data lives in a Google Sheet you own — one tab per month, human-readable dates
 - Optional: attach receipt photos or PDFs, stored in your Google Drive (OAuth modes only)
-- Works as an installable PWA (add to home screen)
-- **No Google account required** — use the Apps Script mode for a simpler setup
+
+**UX & customisation**
+- Works as an installable PWA (add to home screen on iOS and Android)
+- Full dark mode, auto-detected from system preference
+- Localization: English (en-GB) and Argentine Spanish (es-AR)
+- **No OAuth required** — use the Apps Script mode for a simpler, credential-free setup
 - **Custom branding** — set your own app title and logo (emoji or image) from Settings; encoded in the bookmark URL, no server required
 
 ---
@@ -193,11 +210,13 @@ Share or bookmark the URL after saving and the branding travels with it. Resetti
 
 ## Tech stack
 
-- [Alpine.js](https://alpinejs.dev/) v3 — reactive UI, no build step
-- [Chart.js](https://www.chartjs.org/) v4 — dashboard charts
-- [emoji-picker-element](https://github.com/nolanlawson/emoji-picker-element) — full emoji picker for branding
+No build step. Everything runs directly in the browser.
+
+- [Alpine.js](https://alpinejs.dev/) v3 — reactive UI with zero build tooling
+- [Chart.js](https://www.chartjs.org/) v4 — dashboard charts (category donut + monthly bar)
+- [emoji-picker-element](https://github.com/nolanlawson/emoji-picker-element) — emoji picker for custom branding
 - [Google Identity Services](https://developers.google.com/identity/oauth2/web/guides/overview) — OAuth 2.0 (Options A & B)
 - [Google Sheets API v4](https://developers.google.com/sheets/api) — data storage (Options A & B)
-- [Google Drive API v3](https://developers.google.com/drive/api) — receipt storage (Option A)
-- [Google Apps Script](https://developers.google.com/apps-script) — serverless backend (Option C)
-- Custom CSS design system — no frameworks
+- [Google Drive API v3](https://developers.google.com/drive/api) — receipt photo storage (Option A)
+- [Google Apps Script](https://developers.google.com/apps-script) — serverless API backend (Option C, no OAuth)
+- Custom CSS design system — mobile-first, no frameworks, design tokens via CSS custom properties

@@ -313,9 +313,11 @@ function appData() {
         AppScript.init(this.scriptUrl);
         this.isAuthenticated = true;
         this.isInitializing = false;
-        await this.loadExpenses();
-        await this.loadDebts();
-        await this.loadIncome();
+        await Promise.allSettled([
+          this.loadExpenses(),
+          this.loadDebts(),
+          this.loadIncome(),
+        ]);
         // Load cached sheet URL from localStorage first (works for existing deployments).
         this.sheetDisplayUrl = localStorage.getItem('et_sheet_display_url') || null;
         // Check script version and fetch sheet URL in parallel.
@@ -604,9 +606,11 @@ function appData() {
 
     async _setupSheetAndLoad() {
       await this._ensureSheet();
-      await this.loadExpenses();
-      await this.loadDebts();
-      await this.loadIncome();
+      await Promise.allSettled([
+        this.loadExpenses(),
+        this.loadDebts(),
+        this.loadIncome(),
+      ]);
     },
 
     async _ensureSheet() {
@@ -732,6 +736,7 @@ function appData() {
       } catch (err) {
         if (err && err.status === 401) { this.handleAuthError(); return; }
         // Non-fatal: income tab may not exist yet on first load
+        console.warn('[loadIncome] failed:', err);
       }
     },
 
@@ -949,6 +954,7 @@ function appData() {
       } catch (err) {
         if (err && err.status === 401) { this.handleAuthError(); return; }
         // Non-fatal: debts tab may not exist yet on first load
+        console.warn('[loadDebts] failed:', err);
       }
     },
 

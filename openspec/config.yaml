@@ -1,20 +1,18 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Tech stack: Vanilla JS, Alpine.js (no build step), Google Sheets API / Apps Script backend.
+  Single-file app (index.html + css/app.css + js/*.js). Mobile-first PWA, targets iOS/Android home-screen install as well as desktop browsers.
+  Two auth modes: OAuth (sheets.js) and no-OAuth via Google Apps Script web app (appscript.js).
+  Features: expense tracking, income tracking, debt management, balance reconciliation, multi-currency, receipt photo upload (OAuth mode only), dark mode, i18n (en-GB, es-AR).
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  UI / Design:
+  - For any UI or visual change, invoke the `design-taste-frontend` skill before proposing or implementing.
+  - Design tokens live in css/app.css under `:root { }`. Use them (--clr-*, --sp-*, --r-*, --shadow-*) rather than raw values.
+  - Desktop breakpoint is @media (min-width: 768px); sidebar is permanent on desktop (220px fixed left).
+  - Content max-width: 480px mobile, 960px desktop (dashboard/income lists) / 640px (forms/settings).
+
+  Conventions:
+  - Bump APP_VERSION in config.js and the ?v= cache-busting suffix in index.html for every JS/CSS change.
+  - All user-facing strings go through the t() i18n helper (js/i18n.js). Add keys to both locales.
+  - Git commits use conventional commits style (feat:, fix:, chore:, etc.).
