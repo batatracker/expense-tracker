@@ -232,6 +232,81 @@ function appData() {
           this._injectFavicon(dataUri, this.appIcon.length > 10);
         }
       }
+      // Inject a dynamic PWA manifest so the install prompt uses the correct
+      // app name and PNG icons (the static manifest.json has no PNG files).
+      this._updatePwaManifest();
+    },
+
+    // Build and inject a Blob-URL manifest with the current branding + rasterized PNG icons.
+    async _updatePwaManifest() {
+      const title     = this.appTitle || 'Expense Tracker';
+      const shortName = this.appTitle
+        ? (this.appTitle.length > 14 ? this.appTitle.slice(0, 14) : this.appTitle)
+        : 'Expenses';
+
+      const icons = [];
+      for (const size of [192, 512]) {
+        try {
+          const blob = this._brandingIconUrl
+            ? await this._resizeImageToBlob(this._brandingIconUrl, size)
+            : await this._svgToPngBlob('assets/icon.svg', size);
+          if (blob) icons.push({
+            src: URL.createObjectURL(blob),
+            sizes: `${size}x${size}`,
+            type: 'image/png',
+            purpose: 'any maskable',
+          });
+        } catch { /* non-fatal */ }
+      }
+      // Always include the source SVG as a fallback.
+      icons.push({ src: 'assets/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' });
+
+      const manifest = {
+        name: title,
+        short_name: shortName,
+        description: 'Track expenses. Data lives in your own Google Sheet.',
+        start_url: './',
+        display: 'standalone',
+        background_color: '#5B4FE9',
+        theme_color: '#5B4FE9',
+        orientation: 'portrait',
+        icons,
+      };
+
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const el   = document.querySelector('link[rel="manifest"]');
+      if (!el) return;
+      if (el._manifestBlobUrl) URL.revokeObjectURL(el._manifestBlobUrl);
+      el._manifestBlobUrl = url;
+      el.href = url;
+    },
+
+    // Draw any image data-URI onto a canvas and return a PNG Blob at `size`×`size`.
+    _resizeImageToBlob(dataURI, size) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = c.height = size;
+          c.getContext('2d').drawImage(img, 0, 0, size, size);
+          c.toBlob(resolve, 'image/png');
+        };
+        img.onerror = () => resolve(null);
+        img.src = dataURI;
+      });
+    },
+
+    // Fetch an SVG file and rasterize it to a PNG Blob at `size`×`size`.
+    async _svgToPngBlob(svgPath, size) {
+      try {
+        const text    = await (await fetch(svgPath)).text();
+        const svgBlob = new Blob([text], { type: 'image/svg+xml' });
+        const svgUrl  = URL.createObjectURL(svgBlob);
+        const png     = await this._resizeImageToBlob(svgUrl, size);
+        URL.revokeObjectURL(svgUrl);
+        return png;
+      } catch { return null; }
     },
 
     // Emoji (≤10 chars) → render to canvas → PNG data-URI.
@@ -292,7 +367,13 @@ function appData() {
 
       // Check URL for ?cfg= param — restores config after localStorage wipe.
       this._loadConfigFromUrl();
-      // Apply custom title/favicon from URL config before first render.
+      // Fall back to et_settings for branding on PWA cold-starts (no ?cfg= in URL).
+      try {
+        const s = JSON.parse(localStorage.getItem('et_settings') || '{}');
+        if (!this.appTitle && s.appTitle) this.appTitle = s.appTitle;
+        if (!this.appIcon  && s.appIcon)  this.appIcon  = s.appIcon;
+      } catch {}
+      // Apply custom title/favicon/manifest.
       this._applyBranding();
 
       // Read persisted appMode and scriptUrl
@@ -359,7 +440,6 @@ function appData() {
         this._handleHash();
         // Charts won't auto-trigger if currentView was already 'dashboard' (watcher ignores no-ops)
         if (this.currentView === 'dashboard') this.$nextTick(() => this.initCharts());
-        this._initPullToRefresh();
         return;
       }
 
@@ -423,35 +503,6 @@ function appData() {
       // Charts won't auto-trigger if currentView was already 'dashboard' (watcher ignores no-ops)
       if (this.currentView === 'dashboard') this.$nextTick(() => this.initCharts());
 
-      // Pull-to-refresh on expense list
-      this._initPullToRefresh();
-    },
-
-    _initPullToRefresh() {
-      let startY = 0;
-      let isPulling = false;
-      const el = document.querySelector('.view-container');
-      if (!el) return;
-
-      el.addEventListener('touchstart', (e) => {
-        if (el.scrollTop === 0) startY = e.touches[0].clientY;
-      }, { passive: true });
-
-      el.addEventListener('touchmove', (e) => {
-        if (!startY) return;
-        const dy = e.touches[0].clientY - startY;
-        if (dy > 80 && el.scrollTop === 0) {
-          isPulling = true;
-        }
-      }, { passive: true });
-
-      el.addEventListener('touchend', async () => {
-        if (isPulling) {
-          await this.refreshExpenses();
-        }
-        isPulling = false;
-        startY = 0;
-      }, { passive: true });
     },
 
     _handleHash() {
@@ -1900,6 +1951,13 @@ function appData() {
     // Persist current appTitle/appIcon into the URL (same pattern as saveSettings).
     saveBranding() {
       this._applyBranding();
+      // Also write to et_settings so PWA cold-starts (no ?cfg= param) restore branding.
+      try {
+        const s = JSON.parse(localStorage.getItem('et_settings') || '{}');
+        s.appTitle = this.appTitle || '';
+        s.appIcon  = this.appIcon  || '';
+        localStorage.setItem('et_settings', JSON.stringify(s));
+      } catch {}
       const clientId  = localStorage.getItem('et_client_id')  || '';
       const sheetId   = localStorage.getItem('et_sheet_id')   || '';
       const scriptUrl = localStorage.getItem('et_script_url') || '';
@@ -1918,6 +1976,11 @@ function appData() {
       this.appTitle = '';
       this.appIcon  = '';
       this._brandingIconUrl = '';
+      try {
+        const s = JSON.parse(localStorage.getItem('et_settings') || '{}');
+        delete s.appTitle; delete s.appIcon;
+        localStorage.setItem('et_settings', JSON.stringify(s));
+      } catch {}
       document.title = 'Expense Tracker';
       const metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
       if (metaTitle) metaTitle.setAttribute('content', 'Expenses');
@@ -2005,6 +2068,17 @@ function appData() {
       this.toastType    = type;
       this.toastVisible = true;
       this._toastTimer  = setTimeout(() => { this.toastVisible = false; }, 3500);
+    },
+
+    // Returns a CSS font-size string that shrinks as the formatted amount grows longer.
+    // `base` is the starting size (px) for short values; two-column cards use 22, full-width 26.
+    statValueFontSize(amount, currency, base = 22) {
+      const str = this.formatCurrency(Math.abs(parseFloat(amount) || 0), currency);
+      const len = str.length;
+      if (len <= 10) return base + 'px';
+      if (len <= 13) return Math.round(base * 0.82) + 'px';
+      if (len <= 16) return Math.round(base * 0.66) + 'px';
+      return Math.round(base * 0.55) + 'px';
     },
 
     formatCurrency(amount, currency) {

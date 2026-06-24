@@ -8,7 +8,7 @@
 // ============================================================
 
 const CONFIG = {
-  APP_VERSION: '1.6.0',
+  APP_VERSION: '1.6.1',
 
   // Increment this whenever the Apps Script source changes in a way that
   // requires users to re-deploy. The deployed script returns its own version
