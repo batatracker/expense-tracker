@@ -2156,6 +2156,17 @@ function appData() {
       return CONFIG.APP_VERSION;
     },
 
+    // Infer the GitHub repo URL when running on GitHub Pages (*.github.io).
+    // Returns null on custom domains or local dev where the repo can't be determined.
+    get githubRepoUrl() {
+      const host = window.location.hostname;
+      if (!host.endsWith('.github.io')) return null;
+      const username = host.slice(0, host.indexOf('.'));
+      const parts = window.location.pathname.replace(/^\//, '').split('/');
+      const repo = parts[0];
+      return repo ? `https://github.com/${username}/${repo}` : `https://github.com/${username}`;
+    },
+
     get scriptVersionRequired() {
       return CONFIG.SCRIPT_VERSION;
     },
