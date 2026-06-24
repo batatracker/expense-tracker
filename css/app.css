@@ -5,6 +5,10 @@
 
 /* ---- Tokens ---- */
 :root {
+  /* Tell the browser this page manages its own color scheme — prevents the browser
+     from applying forced dark mode over a light-themed page on dark-mode systems. */
+  color-scheme: light;
+
   /* Brand */
   --clr-primary:       #5B4FE9;
   --clr-primary-hover: #4A3FD6;
@@ -1168,6 +1172,8 @@ a { color: inherit; text-decoration: none; }
    ================================================================ */
 
 [data-theme="dark"] {
+  color-scheme: dark;
+
   --clr-bg:            #0E1017;
   --clr-surface:       #181B26;
   --clr-surface-2:     #1E2233;

@@ -59,7 +59,7 @@
     (function(){
       var d = localStorage.getItem('et_dark_mode');
       var dark = d === 'true' || (d === null && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      if (dark) document.documentElement.setAttribute('data-theme','dark');
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     })();
   </script>
 
