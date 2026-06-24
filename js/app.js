@@ -13,6 +13,7 @@ function appData() {
     setupErrors: {},
     appMode: 'oauth',       // 'oauth' | 'appscript'
     scriptUrl: null,
+    _windowWidth: window.innerWidth,
     setupStep: 1,           // wizard step for appscript mode
     setupVerifying: false,
 
@@ -180,18 +181,21 @@ function appData() {
         if (!param) return false;
         // Unicode-safe decode (backward-compatible with ASCII-only encoded URLs).
         const cfg = JSON.parse(decodeURIComponent(atob(param).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')));
+        // URL is always source-of-truth: overwrite localStorage for every field present.
         if (cfg.clientId)  localStorage.setItem('et_client_id', cfg.clientId);
         if (cfg.sheetId)   localStorage.setItem('et_sheet_id',  cfg.sheetId);
-        if (cfg.currency || cfg.receiptUpload !== undefined || cfg.appMode || cfg.scriptUrl) {
-          const existing = JSON.parse(localStorage.getItem('et_settings') || '{}');
-          if (cfg.currency)                   existing.defaultCurrency = cfg.currency;
-          if (cfg.receiptUpload !== undefined) existing.receiptUpload   = cfg.receiptUpload;
-          if (cfg.appMode)                    existing.appMode          = cfg.appMode;
-          localStorage.setItem('et_settings', JSON.stringify(existing));
+        if (cfg.scriptUrl) localStorage.setItem('et_script_url', cfg.scriptUrl);
+        {
+          const s = JSON.parse(localStorage.getItem('et_settings') || '{}');
+          if (cfg.currency)                   s.defaultCurrency = cfg.currency;
+          if (cfg.receiptUpload !== undefined) s.receiptUpload   = cfg.receiptUpload;
+          if (cfg.appMode)                    s.appMode          = cfg.appMode;
+          if (cfg.appTitle !== undefined)     s.appTitle         = cfg.appTitle;
+          if (cfg.appIcon  !== undefined)     s.appIcon          = cfg.appIcon;
+          localStorage.setItem('et_settings', JSON.stringify(s));
         }
-        if (cfg.scriptUrl)  localStorage.setItem('et_script_url', cfg.scriptUrl);
-        if (cfg.appTitle)  this.appTitle = cfg.appTitle;
-        if (cfg.appIcon)   this.appIcon  = cfg.appIcon;
+        if (cfg.appTitle !== undefined) this.appTitle = cfg.appTitle;
+        if (cfg.appIcon  !== undefined) this.appIcon  = cfg.appIcon;
         return true;
       } catch { return false; }
     },
@@ -362,6 +366,10 @@ function appData() {
     },
 
     async init() {
+      // Keep _windowWidth in sync so responsive computed properties (e.g. statValueFontSize)
+      // re-evaluate automatically when the viewport is resized.
+      window.addEventListener('resize', () => { this._windowWidth = window.innerWidth; });
+
       // Apply saved theme immediately (syncs Alpine state; CSS already handled first paint).
       this.initDarkMode();
 
@@ -605,7 +613,13 @@ function appData() {
       localStorage.setItem('et_settings', JSON.stringify(s));
       const url = new URL(window.location.href);
       url.searchParams.delete('cfg');
-      window.location.href = url.toString();
+      // If the URL didn't change (app was running without ?cfg=), location.href = same
+      // URL may be a no-op in some browsers — use reload() to guarantee a fresh init.
+      if (url.toString() === window.location.href) {
+        window.location.reload();
+      } else {
+        window.location.href = url.toString();
+      }
     },
 
     get maskedClientId() {
@@ -2073,6 +2087,9 @@ function appData() {
     // Returns a CSS font-size string that shrinks as the formatted amount grows longer.
     // `base` is the starting size (px) for short values; two-column cards use 22, full-width 26.
     statValueFontSize(amount, currency, base = 22) {
+      // On desktop the stat cards are wide enough (~320px each) to show any realistic
+      // amount at full size — only shrink on mobile where card width is ~130px.
+      if (this._windowWidth >= 768) return base + 'px';
       const str = this.formatCurrency(Math.abs(parseFloat(amount) || 0), currency);
       const len = str.length;
       if (len <= 10) return base + 'px';
