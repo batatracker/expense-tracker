@@ -602,15 +602,18 @@ const I18n = (() => {
   };
 
   // ----------------------------------------------------------
-  // Locale detection — reads ?lang= query param, no stored state.
-  // Using a query param (not a path prefix) avoids server-side
-  // routing requirements on static hosts.
-  //   ?lang=es  →  es-AR
-  //   (absent)  →  en-GB
+  // Locale detection — priority order:
+  //   1. ?lang= URL query param (explicit, shareable)
+  //   2. localStorage key 'et_locale' (PWA cold-start persistence)
+  //   3. Default: 'en-GB'
   // ----------------------------------------------------------
   function detectLocale() {
     const lang = new URLSearchParams(window.location.search).get('lang');
-    return lang === 'es' ? 'es-AR' : 'en-GB';
+    if (lang === 'es') return 'es-AR';
+    if (lang !== null) return 'en-GB'; // any other explicit param → English
+    const stored = localStorage.getItem('et_locale');
+    if (stored === 'es-AR' || stored === 'en-GB') return stored;
+    return 'en-GB';
   }
 
   let _locale = detectLocale();
@@ -630,6 +633,7 @@ const I18n = (() => {
   // Preserves all other query params (e.g. ?cfg=...).
   // ----------------------------------------------------------
   function switchLocale(targetLocale) {
+    localStorage.setItem('et_locale', targetLocale);
     const url = new URL(window.location.href);
     if (targetLocale === 'es-AR') {
       url.searchParams.set('lang', 'es');

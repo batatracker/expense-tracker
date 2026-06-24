@@ -436,7 +436,7 @@ function appData() {
       el.addEventListener('touchmove', (e) => {
         if (!startY) return;
         const dy = e.touches[0].clientY - startY;
-        if (dy > 60 && el.scrollTop === 0) {
+        if (dy > 80 && el.scrollTop === 0) {
           isPulling = true;
         }
       }, { passive: true });

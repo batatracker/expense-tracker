@@ -1,9 +1,7 @@
 ## Purpose
 
 Provides the home/dashboard view with spending summaries, category breakdown charts, monthly trend charts, and a recent expenses list. All computations are performed client-side from the cached expense data.
-
 ## Requirements
-
 ### Requirement: Dashboard displays a spending summary for the current month
 The system SHALL show a summary section at the top of the Dashboard view with three stat cards: "Income this month" (value in success/green color), "Expenses this month" (value in danger/red color), and "Net balance" (value in success color when positive, danger color when negative). A fourth sub-line below the net balance SHALL show the cumulative carry-over balance from all prior months in muted text. When no income has ever been tracked, the system SHALL fall back to a single "Total Spent" stat card (no income/net split). All amounts SHALL be formatted using `Intl.NumberFormat` with the active locale. The stat cards SHALL be displayed on a neutral surface (`--clr-surface`) with a subtle border and shadow — NOT on a colored gradient background.
 
@@ -129,3 +127,26 @@ The system SHALL use a wider layout on viewports ≥768px, with a maximum conten
 #### Scenario: Mobile layout unchanged
 - **WHEN** the viewport is <768px
 - **THEN** the Dashboard layout SHALL remain unchanged (vertical stacking, full-width cards, existing behaviour)
+
+### Requirement: Dashboard layout does not crop content on narrow mobile viewports
+On viewports narrower than 480 px (e.g., 390–430 px), all dashboard content SHALL remain fully visible within the viewport. No flex child SHALL overflow the right edge of the screen. Elements that previously used `white-space: nowrap` or lacked `min-width: 0` on flex containers SHALL be corrected so text truncates or wraps within bounds rather than pushing the layout wider than the viewport.
+
+#### Scenario: No horizontal scroll on 390 px viewport
+- **WHEN** the Dashboard is rendered on a viewport 390 px wide
+- **THEN** the page SHALL have no horizontal overflow and all content SHALL be fully visible without scrolling right
+
+#### Scenario: Debt strip amounts do not overflow on small screen
+- **WHEN** a debt entry with a long amount string is displayed on the Dashboard debt strip at 390 px width
+- **THEN** the amount SHALL truncate with an ellipsis within the available space rather than extending beyond the viewport edge
+
+### Requirement: Pull-to-refresh does not trigger on normal downward scrolling
+The pull-to-refresh gesture SHALL only activate when the user intentionally pulls the view container down from the very top, with a minimum drag distance of 80 px. Normal scrolling from the top of the page SHALL NOT trigger a data refresh.
+
+#### Scenario: Scrolling down does not refresh
+- **WHEN** the user scrolls down on the Dashboard from the top position with a downward drag of less than 80 px
+- **THEN** the app SHALL NOT call `refreshExpenses()`
+
+#### Scenario: Intentional pull refresh triggers reload
+- **WHEN** the user pulls down more than 80 px from the top of the Dashboard view
+- **THEN** the app SHALL call `refreshExpenses()` and reload the data
+
