@@ -295,6 +295,24 @@ const I18n = (() => {
       'toast.income_deleted':         'Entry deleted.',
       'toast.reconciliation_saved':   'Balance adjustment saved.',
 
+      // Loan linking
+      'loan.toggle_label':            'This is a loan',
+      'loan.toggle_desc':             'Creates a paired entry in the other section',
+      'loan.debt_creates_income':     'Saving this debt will also create a paired income entry for the same amount.',
+      'loan.income_creates_debt':     'Saving this income will also create a paired debt entry for the same amount.',
+      'loan.will_create_debt':        'Will also create: a debt of',
+      'loan.will_create_income':      'Will also create: an income of',
+      'loan.from':                    'from',
+      'loan.on':                      'on',
+      'loan.save_debt_income':        'Save debt + income',
+      'loan.save_income_debt':        'Save income + debt',
+      'loan.both_saved':              'Debt and income entry saved.',
+      'loan.income_debt_saved':       'Income and debt entry saved.',
+      'loan.debt_saved_income_failed':'Debt saved. Income entry could not be created — please add it manually.',
+      'loan.income_saved_debt_failed':'Income saved. Debt entry could not be created — please add it manually.',
+      'loan.badge_debt':              'Loan — paired with a debt entry',
+      'loan.badge_income':            'Loan — paired with an income entry',
+
       // Category display names (English keys = display values)
       'Food & Dining':       'Food & Dining',
       'Transportation':      'Transportation',
@@ -584,6 +602,24 @@ const I18n = (() => {
       'toast.income_added':           'Ingreso guardado.',
       'toast.income_deleted':         'Registro eliminado.',
       'toast.reconciliation_saved':   'Ajuste de saldo guardado.',
+
+      // Loan linking
+      'loan.toggle_label':            'Esto es un préstamo',
+      'loan.toggle_desc':             'Crea un registro vinculado en la otra sección',
+      'loan.debt_creates_income':     'Guardar esta deuda también creará un ingreso vinculado por el mismo monto.',
+      'loan.income_creates_debt':     'Guardar este ingreso también creará una deuda vinculada por el mismo monto.',
+      'loan.will_create_debt':        'También creará: una deuda de',
+      'loan.will_create_income':      'También creará: un ingreso de',
+      'loan.from':                    'de',
+      'loan.on':                      'el',
+      'loan.save_debt_income':        'Guardar deuda + ingreso',
+      'loan.save_income_debt':        'Guardar ingreso + deuda',
+      'loan.both_saved':              'Deuda e ingreso guardados.',
+      'loan.income_debt_saved':       'Ingreso y deuda guardados.',
+      'loan.debt_saved_income_failed':'Deuda guardada. No se pudo crear el ingreso — agregalo manualmente.',
+      'loan.income_saved_debt_failed':'Ingreso guardado. No se pudo crear la deuda — agregala manualmente.',
+      'loan.badge_debt':              'Préstamo — vinculado a una deuda',
+      'loan.badge_income':            'Préstamo — vinculado a un ingreso',
 
       // Category display names (stored as English keys in Google Sheets)
       'Food & Dining':       'Comida y Restaurantes',

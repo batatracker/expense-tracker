@@ -82,6 +82,8 @@ function appData() {
       currency: '',
       date: '',
       notes: '',
+      isLoan: false,
+      loanId: null,
     },
     incomeFormErrors: {},
     showIncomeForm: false,
@@ -116,6 +118,8 @@ function appData() {
       outstandingBalance: '',
       currency: '',
       notes: '',
+      isLoan: false,
+      loanId: null,
     },
     debtFormErrors: {},
     showDebtForm: false,
@@ -748,6 +752,8 @@ function appData() {
         currency: this.defaultCurrency,
         date: new Date().toISOString().split('T')[0],
         notes: '',
+        isLoan: false,
+        loanId: null,
       };
       this.incomeFormErrors = {};
       this.showIncomeForm = true;
@@ -768,20 +774,52 @@ function appData() {
 
       this.isSavingIncome = true;
       try {
+        const isLoan = !!this.incomeForm.isLoan;
+        const loanId = isLoan ? crypto.randomUUID() : '';
+        const currency = (this.incomeForm.currency || this.defaultCurrency || '').toUpperCase();
+        const incomeDate = this.incomeForm.date;
         const entry = {
           id: crypto.randomUUID(),
           type: 'income',
           source,
           amount: amount.toFixed(2),
-          currency: (this.incomeForm.currency || this.defaultCurrency || '').toUpperCase(),
-          date: this.incomeForm.date,
+          currency,
+          date: incomeDate,
           notes: (this.incomeForm.notes || '').trim(),
           createdAt: new Date().toISOString(),
+          loanId,
         };
         await this._dbAppendIncome(entry);
         this.income.push(entry);
         this.showIncomeForm = false;
-        this.showToast(t('toast.income_added'), 'success');
+
+        if (isLoan) {
+          // Create paired debt entry
+          try {
+            const debt = {
+              id: crypto.randomUUID(),
+              source,
+              totalAmount: amount.toFixed(2),
+              date: incomeDate,
+              outstandingBalance: amount.toFixed(2),
+              currency,
+              dueDate: '',
+              notes: '',
+              status: 'open',
+              createdAt: new Date().toISOString(),
+              loanId,
+            };
+            await this._dbAppendDebt(debt);
+            this.debts.unshift(debt);
+            this.showToast(t('loan.income_debt_saved'), 'success');
+          } catch (debtErr) {
+            console.error('[loan] debt counterpart failed:', debtErr);
+            if (debtErr && debtErr.status === 401) { this.handleAuthError(); return; }
+            this.showToast(t('loan.income_saved_debt_failed'), 'warning');
+          }
+        } else {
+          this.showToast(t('toast.income_added'), 'success');
+        }
       } catch (err) {
         console.error('[income] saveIncome error:', err);
         if (err && err.status === 401) { this.handleAuthError(); return; }
@@ -1009,6 +1047,8 @@ function appData() {
         outstandingBalance: '',
         currency: this.defaultCurrency,
         notes: '',
+        isLoan: false,
+        loanId: null,
       };
       this.debtFormErrors = {};
       this.showDebtForm = true;
@@ -1024,6 +1064,8 @@ function appData() {
         outstandingBalance: debt.outstandingBalance,
         currency: debt.currency,
         notes: debt.notes || '',
+        isLoan: false,
+        loanId: null,
       };
       this.debtFormErrors = {};
       this.showDebtForm = true;
@@ -1061,21 +1103,51 @@ function appData() {
           if (idx >= 0) this.debts.splice(idx, 1, debt);
           this.showToast(t('toast.debt_updated'), 'success');
         } else {
+          const isLoan = !!this.debtForm.isLoan;
+          const loanId = isLoan ? crypto.randomUUID() : '';
+          const debtDate = this.debtForm.date || new Date().toISOString().slice(0, 10);
+          const currency = this.debtForm.currency.toUpperCase();
           const debt = {
             id: crypto.randomUUID(),
             source,
             totalAmount: amount.toFixed(2),
-            date: this.debtForm.date || new Date().toISOString().slice(0, 10),
+            date: debtDate,
             outstandingBalance: amount.toFixed(2),
-            currency: this.debtForm.currency.toUpperCase(),
+            currency,
             dueDate: '',
             notes: this.debtForm.notes.trim(),
             status: 'open',
             createdAt: new Date().toISOString(),
+            loanId,
           };
           await this._dbAppendDebt(debt);
           this.debts.unshift(debt);
-          this.showToast(t('toast.debt_saved'), 'success');
+
+          if (isLoan) {
+            // Create paired income entry
+            try {
+              const incomeEntry = {
+                id: crypto.randomUUID(),
+                type: 'income',
+                source,
+                amount: amount.toFixed(2),
+                currency,
+                date: debtDate,
+                notes: '',
+                createdAt: new Date().toISOString(),
+                loanId,
+              };
+              await this._dbAppendIncome(incomeEntry);
+              this.income.push(incomeEntry);
+              this.showToast(t('loan.both_saved'), 'success');
+            } catch (incomeErr) {
+              console.error('[loan] income counterpart failed:', incomeErr);
+              if (incomeErr && incomeErr.status === 401) { this.handleAuthError(); return; }
+              this.showToast(t('loan.debt_saved_income_failed'), 'warning');
+            }
+          } else {
+            this.showToast(t('toast.debt_saved'), 'success');
+          }
         }
         this.showDebtForm = false;
       } catch (err) {

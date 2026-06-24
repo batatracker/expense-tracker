@@ -1953,3 +1953,102 @@ a { color: inherit; text-decoration: none; }
 [data-theme="dark"] .income-balance-card { background: linear-gradient(135deg, #047857 0%, #065f46 100%); }
 [data-theme="dark"] .income-balance-card--negative { background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%); }
 [data-theme="dark"] .reconcile-balance-ctx { background: rgba(217,119,6,0.12); border-color: rgba(252,211,77,0.3); }
+
+/* ============================================================
+   Loan linking — toggle, confirmation panel, and badges
+   ============================================================ */
+
+/* ---- Loan toggle ---- */
+.loan-toggle-row {
+  margin-top: var(--sp-3);
+  margin-bottom: var(--sp-1);
+}
+.loan-toggle-label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  cursor: pointer;
+  padding: var(--sp-3) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--clr-border);
+  background: var(--clr-surface);
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+}
+.loan-toggle-label:hover { border-color: var(--clr-primary); background: rgba(91,79,233,0.04); }
+.loan-toggle-checkbox {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--clr-primary);
+  margin-top: 2px;
+  cursor: pointer;
+}
+.loan-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+.loan-toggle-desc {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--clr-text-muted);
+}
+
+/* ---- Loan confirmation panel ---- */
+.loan-confirm-panel {
+  margin-top: var(--sp-2);
+  border: 1px solid rgba(91,79,233,0.3);
+  border-radius: var(--r-md);
+  background: rgba(91,79,233,0.06);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.loan-confirm-icon {
+  color: var(--clr-primary);
+  flex-shrink: 0;
+}
+.loan-confirm-text {
+  font-size: 13px;
+  color: var(--clr-text);
+  margin: 0;
+  line-height: 1.45;
+}
+.loan-confirm-summary {
+  font-size: 12px;
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+}
+.loan-confirm-summary strong {
+  color: var(--clr-text);
+  font-weight: 600;
+}
+
+/* ---- Loan badge (debt entry + income entry) ---- */
+.loan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--sp-1);
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  background: rgba(91,79,233,0.1);
+  color: var(--clr-primary);
+  font-size: 11px;
+  font-weight: 500;
+}
+.loan-badge--income {
+  background: rgba(5,150,105,0.1);
+  color: #059669;
+}
+
+/* ---- Dark mode overrides ---- */
+[data-theme="dark"] .loan-toggle-label { border-color: var(--clr-border); background: var(--clr-surface); }
+[data-theme="dark"] .loan-toggle-label:hover { border-color: var(--clr-primary); background: rgba(91,79,233,0.08); }
+[data-theme="dark"] .loan-confirm-panel { border-color: rgba(91,79,233,0.35); background: rgba(91,79,233,0.1); }
+[data-theme="dark"] .loan-badge { background: rgba(91,79,233,0.2); }
+[data-theme="dark"] .loan-badge--income { background: rgba(5,150,105,0.2); color: #34D399; }

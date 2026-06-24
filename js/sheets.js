@@ -402,6 +402,7 @@ const Sheets = (function () {
       d.notes           || '',
       d.status          || 'open',
       d.createdAt       || '',
+      d.loanId          || '',
     ];
   }
 
@@ -418,6 +419,7 @@ const Sheets = (function () {
       notes:              (row[col('notes')]                || '').toString().trim(),
       status:             (row[col('status')]               || 'open').toString().trim(),
       createdAt:          (row[col('created at')]           || '').toString().trim(),
+      loanId:             (row[col('loan id')]              || '').toString().trim(),
     };
   }
 
@@ -580,6 +582,7 @@ const Sheets = (function () {
       e.date      || '',
       e.notes     || '',
       e.createdAt || '',
+      e.loanId    || '',
     ];
   }
 
@@ -594,6 +597,7 @@ const Sheets = (function () {
       date:      _toIso((row[col('date')]|| '').toString().trim()),
       notes:     (row[col('notes')]      || '').toString().trim(),
       createdAt: (row[col('created at')] || '').toString().trim(),
+      loanId:    (row[col('loan id')]    || '').toString().trim(),
     };
   }
 

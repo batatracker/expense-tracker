@@ -114,11 +114,11 @@ const AppScript = (() => {
   const SCRIPT_SOURCE = `// ExpenseTracker — Apps Script backend
 // Deploy: Extensions → Apps Script → Deploy → New deployment
 //   Type: Web app | Execute as: Me | Who has access: Anyone
-var SCRIPT_VERSION = 4;
+var SCRIPT_VERSION = 5;
 var COLS = ['ID','Date','Amount','Currency','Category','Merchant','Notes','Receipt URL','Created At'];
-var DEBT_COLS = ['ID','Source','Date','Total Amount','Outstanding Balance','Currency','Due Date','Notes','Status','Created At'];
+var DEBT_COLS = ['ID','Source','Date','Total Amount','Outstanding Balance','Currency','Due Date','Notes','Status','Created At','Loan ID'];
 var PAYMENT_COLS = ['ID','Debt ID','Amount','Currency','Date','Notes','Created At'];
-var INCOME_COLS = ['ID','Type','Source','Amount','Currency','Date','Notes','Created At'];
+var INCOME_COLS = ['ID','Type','Source','Amount','Currency','Date','Notes','Created At','Loan ID'];
 var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Returns the active spreadsheet (container-bound) or finds/creates one (standalone).
@@ -283,7 +283,8 @@ function readDebts(ss) {
       dueDate:(r[ci(h,'due date')]||'').toString().trim(),
       notes:(r[ci(h,'notes')]||'').toString().trim(),
       status:(r[ci(h,'status')]||'open').toString().trim(),
-      createdAt:(r[ci(h,'created at')]||'').toString().trim() });
+      createdAt:(r[ci(h,'created at')]||'').toString().trim(),
+      loanId:(r[ci(h,'loan id')]||'').toString().trim() });
   }
   return { debts: out };
 }
@@ -292,7 +293,7 @@ function appendDebt(ss, d) {
   var sh = ensureNamedSheet(ss, 'Debts', DEBT_COLS);
   sh.appendRow([d.id||'', d.source||'', d.date||'', parseFloat(d.totalAmount)||0,
     parseFloat(d.outstandingBalance)||0, d.currency||'', d.dueDate||'',
-    d.notes||'', d.status||'open', d.createdAt||'']);
+    d.notes||'', d.status||'open', d.createdAt||'', d.loanId||'']);
   return { ok: true };
 }
 
@@ -395,7 +396,8 @@ function readIncome(ss) {
       currency:(r[ci(h,'currency')]||'').toString().trim(),
       date:toIso((r[ci(h,'date')]||'').toString().trim()),
       notes:(r[ci(h,'notes')]||'').toString().trim(),
-      createdAt:(r[ci(h,'created at')]||'').toString().trim() });
+      createdAt:(r[ci(h,'created at')]||'').toString().trim(),
+      loanId:(r[ci(h,'loan id')]||'').toString().trim() });
   }
   return { income: out };
 }
@@ -404,7 +406,7 @@ function appendIncome(ss, e) {
   var sh = ensureNamedSheet(ss, 'Income', INCOME_COLS);
   sh.appendRow([e.id||'', e.type||'income', e.source||'',
     parseFloat(e.amount)||0, e.currency||'', e.date||'',
-    e.notes||'', e.createdAt||'']);
+    e.notes||'', e.createdAt||'', e.loanId||'']);
   return { ok: true };
 }
 

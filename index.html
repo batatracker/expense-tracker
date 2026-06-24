@@ -27,7 +27,7 @@
 
   <!-- Cache-busting: ?v= suffix forces a fresh fetch when assets change.
        Bump the version in config.js (APP_VERSION) and here whenever JS or CSS changes. -->
-  <link rel="stylesheet" href="css/app.css?v=1.5.2">
+  <link rel="stylesheet" href="css/app.css?v=1.6.0">
 
   <!-- emoji-picker-element: full-featured emoji picker web component -->
   <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
@@ -152,13 +152,13 @@
 <!-- ================================================================
      SCRIPTS — loaded before Alpine so appData() is defined
      ================================================================ -->
-<script src="config.js?v=1.5.2"></script>
-<script src="js/i18n.js?v=1.5.2"></script>
-<script src="js/auth.js?v=1.5.2"></script>
-<script src="js/sheets.js?v=1.5.2"></script>
-<script src="js/drive.js?v=1.5.2"></script>
-<script src="js/appscript.js?v=1.5.2"></script>
-<script src="js/app.js?v=1.5.2"></script>
+<script src="config.js?v=1.6.0"></script>
+<script src="js/i18n.js?v=1.6.0"></script>
+<script src="js/auth.js?v=1.6.0"></script>
+<script src="js/sheets.js?v=1.6.0"></script>
+<script src="js/drive.js?v=1.6.0"></script>
+<script src="js/appscript.js?v=1.6.0"></script>
+<script src="js/app.js?v=1.6.0"></script>
 
 <!-- ================================================================
      APP ROOT
@@ -1151,6 +1151,12 @@
                         <span> · <span x-text="entry.notes"></span></span>
                       </template>
                     </div>
+                    <template x-if="entry.loanId">
+                      <div class="loan-badge loan-badge--income">
+                        <svg width="12" height="12"><use href="#icon-debt"/></svg>
+                        <span x-text="t('loan.badge_debt')"></span>
+                      </div>
+                    </template>
                   </div>
                   <div class="income-entry-amount" :class="entry.type === 'reconciliation' ? 'income-amount--reconcile' : 'income-amount--positive'">
                     <span x-text="entry.type === 'reconciliation' ? (parseFloat(entry.amount) >= 0 ? '+' : '') + formatCurrency(entry.amount, entry.currency || defaultCurrency) : formatCurrency(entry.amount, entry.currency || defaultCurrency)"></span>
@@ -1612,6 +1618,14 @@
                       <span x-show="debt.notes" class="text-xs text-muted" x-text="debt.notes"></span>
                     </div>
 
+                    <!-- Loan badge -->
+                    <template x-if="debt.loanId">
+                      <div class="loan-badge">
+                        <svg width="12" height="12"><use href="#icon-income"/></svg>
+                        <span x-text="t('loan.badge_income')"></span>
+                      </div>
+                    </template>
+
                     <!-- Payment history toggle -->
                     <button class="debt-history-toggle" @click.stop="toggleDebtHistory(debt)">
                       <span x-text="t('debts.payment_history')"></span>
@@ -1705,11 +1719,39 @@
           <textarea class="form-textarea" x-model="debtForm.notes"
                     :placeholder="t('debts.notes.placeholder')" rows="2"></textarea>
         </div>
+        <!-- Loan toggle (new records only) -->
+        <template x-if="!isEditingDebt">
+          <div class="loan-toggle-row">
+            <label class="loan-toggle-label">
+              <input type="checkbox" x-model="debtForm.isLoan" class="loan-toggle-checkbox">
+              <span class="loan-toggle-text">
+                <span x-text="t('loan.toggle_label')"></span>
+                <span class="loan-toggle-desc" x-text="t('loan.toggle_desc')"></span>
+              </span>
+            </label>
+          </div>
+        </template>
+        <!-- Loan confirmation panel -->
+        <template x-if="!isEditingDebt && debtForm.isLoan">
+          <div class="loan-confirm-panel">
+            <div class="loan-confirm-icon">
+              <svg width="16" height="16"><use href="#icon-income"/></svg>
+            </div>
+            <p class="loan-confirm-text" x-text="t('loan.debt_creates_income')"></p>
+            <div class="loan-confirm-summary" x-show="debtForm.totalAmount && debtForm.source">
+              <span x-text="t('loan.will_create_income')"></span>
+              <strong x-text="formatCurrency(debtForm.totalAmount || 0, debtForm.currency || defaultCurrency)"></strong>
+              <span x-text="t('loan.from')"></span>
+              <strong x-text="debtForm.source || '—'"></strong>
+              <span x-show="debtForm.date"> <span x-text="t('loan.on')"></span> <span x-text="formatDate(debtForm.date)"></span></span>
+            </div>
+          </div>
+        </template>
         <!-- Buttons -->
         <div class="btn-row" style="margin-top:var(--sp-4);padding:0">
           <button class="btn btn-secondary" @click="closeDebtForm()" x-text="t('debts.cancel')"></button>
           <button class="btn btn-primary flex-1" @click="saveDebt()" :disabled="isSavingDebt">
-            <span x-show="!isSavingDebt" x-text="t('debts.save')"></span>
+            <span x-show="!isSavingDebt" x-text="!isEditingDebt && debtForm.isLoan ? t('loan.save_debt_income') : t('debts.save')"></span>
             <span x-show="isSavingDebt" x-text="t('form.saving')"></span>
           </button>
         </div>
@@ -1841,11 +1883,39 @@
           <textarea class="form-textarea" x-model="incomeForm.notes"
                     :placeholder="t('income.notes.placeholder')" rows="2"></textarea>
         </div>
+        <!-- Loan toggle (new records only) -->
+        <template x-if="!incomeForm.id">
+          <div class="loan-toggle-row">
+            <label class="loan-toggle-label">
+              <input type="checkbox" x-model="incomeForm.isLoan" class="loan-toggle-checkbox">
+              <span class="loan-toggle-text">
+                <span x-text="t('loan.toggle_label')"></span>
+                <span class="loan-toggle-desc" x-text="t('loan.toggle_desc')"></span>
+              </span>
+            </label>
+          </div>
+        </template>
+        <!-- Loan confirmation panel -->
+        <template x-if="!incomeForm.id && incomeForm.isLoan">
+          <div class="loan-confirm-panel">
+            <div class="loan-confirm-icon">
+              <svg width="16" height="16"><use href="#icon-debt"/></svg>
+            </div>
+            <p class="loan-confirm-text" x-text="t('loan.income_creates_debt')"></p>
+            <div class="loan-confirm-summary" x-show="incomeForm.amount && incomeForm.source">
+              <span x-text="t('loan.will_create_debt')"></span>
+              <strong x-text="formatCurrency(incomeForm.amount || 0, incomeForm.currency || defaultCurrency)"></strong>
+              <span x-text="t('loan.from')"></span>
+              <strong x-text="incomeForm.source || '—'"></strong>
+              <span x-show="incomeForm.date"> <span x-text="t('loan.on')"></span> <span x-text="formatDate(incomeForm.date)"></span></span>
+            </div>
+          </div>
+        </template>
         <!-- Buttons -->
         <div class="btn-row" style="margin-top:var(--sp-4);padding:0">
           <button class="btn btn-secondary" @click="closeIncomeForm()" x-text="t('form.cancel')"></button>
           <button class="btn btn-income flex-1" @click="saveIncome()" :disabled="isSavingIncome">
-            <span x-show="!isSavingIncome" x-text="t('income.save')"></span>
+            <span x-show="!isSavingIncome" x-text="!incomeForm.id && incomeForm.isLoan ? t('loan.save_income_debt') : t('income.save')"></span>
             <span x-show="isSavingIncome" x-text="t('form.saving')"></span>
           </button>
         </div>
