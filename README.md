@@ -4,6 +4,9 @@ A free, mobile-first expense tracker that stores all data in **your own Google S
 
 **Live demo:** `https://YOUR_USERNAME.github.io/expense-tracker/`
 
+[![CI](https://github.com/DazedNConfused-/local-expense-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/DazedNConfused-/local-expense-tracker/actions/workflows/ci.yml)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+
 ---
 
 ## Features
@@ -220,3 +223,47 @@ No build step. Everything runs directly in the browser.
 - [Google Drive API v3](https://developers.google.com/drive/api) — receipt photo storage (Option A)
 - [Google Apps Script](https://developers.google.com/apps-script) — serverless API backend (Option C, no OAuth)
 - Custom CSS design system — mobile-first, no frameworks, design tokens via CSS custom properties
+
+---
+
+## Contributing
+
+### First-time setup
+
+```bash
+git clone https://github.com/DazedNConfused-/local-expense-tracker.git
+cd local-expense-tracker
+npm install        # installs dev tools and activates Git hooks
+```
+
+### Development workflow
+
+```bash
+npm run lint       # check JS for errors (ESLint)
+npm run lint:fix   # auto-fix fixable lint issues
+npm test           # run unit tests with coverage report
+```
+
+### Commit conventions
+
+This project uses [Conventional Commits](https://conventionalcommits.org). Every commit message must follow the format:
+
+```
+<type>(<optional scope>): <description>
+
+Examples:
+  feat: add dark mode toggle
+  fix(i18n): correct es-AR currency label
+  chore: bump APP_VERSION to 1.7.0
+  docs: update contributing guide
+```
+
+Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `perf`, `revert`.
+
+The `commit-msg` Git hook will reject commits that don't follow this format.
+
+### Pull requests
+
+- CI runs automatically on every PR (lint + tests must pass before merge)
+- Fill in the PR template — description, testing notes, and checklist
+- Keep runtime files (`index.html`, `js/*.js`, `css/`) changes separate from tooling changes

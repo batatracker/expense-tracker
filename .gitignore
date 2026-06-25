@@ -1,0 +1,9 @@
+# Node.js dev dependencies and generated output
+node_modules/
+coverage/
+
+# macOS metadata
+.DS_Store
+
+# npm debug logs
+npm-debug.log*
