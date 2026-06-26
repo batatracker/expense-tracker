@@ -644,7 +644,29 @@
       <!-- -------- DASHBOARD -------- -->
       <div x-show="currentView === 'dashboard'">
         <div class="view-header">
-          <h1 x-text="t('dashboard.title')"></h1>
+          <h1 class="view-header-brand">
+            <!-- Mobile only: brand icon + name (hidden on desktop where sidebar shows branding) -->
+            <span class="brand-mobile">
+              <template x-if="appIcon && !brandingIconIsFile">
+                <span style="font-size:22px;line-height:1;flex-shrink:0" x-text="appIcon"></span>
+              </template>
+              <template x-if="appIcon && brandingIconIsFile && _brandingIconUrl">
+                <img :src="_brandingIconUrl" width="24" height="24" style="border-radius:var(--r-sm);flex-shrink:0;object-fit:contain" alt="App icon">
+              </template>
+              <template x-if="!appIcon">
+                <svg width="24" height="24" viewBox="0 0 36 36" fill="none" style="flex-shrink:0">
+                  <rect x="4" y="8" width="28" height="20" rx="3" fill="var(--clr-primary)" fill-opacity="0.12"/>
+                  <rect x="4" y="8" width="28" height="6" rx="3" fill="var(--clr-primary)"/>
+                  <circle cx="11" cy="22" r="3" fill="var(--clr-primary)" fill-opacity="0.6"/>
+                  <rect x="17" y="20" width="11" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.4"/>
+                  <rect x="17" y="23" width="7" height="2" rx="1" fill="var(--clr-primary)" fill-opacity="0.3"/>
+                </svg>
+              </template>
+              <span x-text="appTitle || t('dashboard.title')"></span>
+            </span>
+            <!-- Desktop only: plain locale title -->
+            <span class="brand-desktop" x-text="t('dashboard.title')"></span>
+          </h1>
           <button class="back-btn" @click="refreshExpenses()" title="Refresh" aria-label="Refresh expenses">
             <svg width="18" height="18"><use href="#icon-refresh"/></svg>
           </button>

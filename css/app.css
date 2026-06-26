@@ -147,6 +147,9 @@ a { color: inherit; text-decoration: none; }
   min-height: var(--header-height);
 }
 .view-header h1 { font-size: 18px; font-weight: 700; flex: 1; }
+.view-header-brand { display: flex; align-items: center; gap: var(--sp-2); }
+.brand-mobile { display: flex; align-items: center; gap: var(--sp-2); }
+.brand-desktop { display: none; }
 .view-header .back-btn {
   width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
@@ -1420,6 +1423,9 @@ a { color: inherit; text-decoration: none; }
 
   /* View header: no sticky needed as much; keep it but flush */
   .view-header h1 { font-size: 22px; }
+  /* Sidebar already shows branding on desktop */
+  .brand-mobile { display: none; }
+  .brand-desktop { display: inline; }
 
   /* Income: hide FAB, show header add button; widen content */
   .income-fab { display: none; }
